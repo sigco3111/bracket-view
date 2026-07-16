@@ -1,0 +1,14 @@
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Don't commit dev-served symlinks or generated files
+node_modules/
+dist/
+*.log

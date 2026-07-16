@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>&lt;bracket-view&gt; Demo</title>
+<style>
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #0a0c10;
+    color: #e5e7eb;
+    min-height: 100vh;
+  }
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+  h1 {
+    margin: 0 0 8px;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .lede {
+    color: #9ca3af;
+    margin: 0 0 32px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .demo {
+    margin-bottom: 48px;
+  }
+  .demo h2 {
+    margin: 0 0 12px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #e5e7eb;
+  }
+  .demo .note {
+    margin: 0 0 12px;
+    color: #9ca3af;
+    font-size: 13px;
+  }
+  badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: rgba(79, 158, 255, 0.15);
+    color: #4f9eff;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .controls-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .controls-row button {
+    background: #1a1d24;
+    color: #e5e7eb;
+    border: 1px solid #2a2f3a;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .controls-row button:hover {
+    background: #252932;
+    border-color: #4f9eff;
+  }
+  footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid #2a2f3a;
+    color: #9ca3af;
+    font-size: 12px;
+  }
+  footer code {
+    background: #1a1d24;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #4f9eff;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>&lt;bracket-view&gt;</h1>
+  <p class="lede">
+    A self-contained, zero-dependency, zero-build interactive tournament bracket Web Component.
+    Inspired by Google Search's elegant bracket visualization — smooth focus, dim non-selected cards, propagating winners.
+  </p>
+
+  <section class="demo">
+    <h2><badge>16 teams · declarative</badge>Esports Cup</h2>
+    <p class="note">Click a team to advance them. Click an empty match body to focus it.</p>
+    <div class="controls-row">
+      <button onclick="document.querySelector('#b1').randomFill()">⚄ Random fill</button>
+      <button onclick="document.querySelector('#b1').reset()">↺ Reset</button>
+    </div>
+    <bracket-view id="b1" teams="T1,GenG,HLE,DK,CFO,PSG,BRO,TL,G2,FNC,MAD,KOI,VKE,LNG,BLG,HLE2" title="Worlds Group Stage — Knockouts"></bracket-view>
+  </section>
+
+  <section class="demo">
+    <h2><badge>32 teams · programmatic</badge>FIFA World Cup Style</h2>
+    <p class="note">Data passed via <code>setData()</code> with pre-seeded semi-final winners to show a near-finished state.</p>
+    <div class="controls-row">
+      <button onclick="document.querySelector('#b2').randomFill()">⚄ Random fill</button>
+      <button onclick="document.querySelector('#b2').reset()">↺ Reset</button>
+    </div>
+    <bracket-view id="b2" title="FIFA World Cup — Knockouts"></bracket-view>
+  </section>
+
+  <section class="demo">
+    <h2><badge>4 teams · minimal</badge>Small Test</h2>
+    <p class="note">Only 4 participants — useful for embedding in sidebars and docs.</p>
+    <bracket-view teams="Apple,Banana,Cherry,Date" title="Fruit Bracket"></bracket-view>
+  </section>
+
+  <footer>
+    Drop in anywhere: <code>&lt;script type="module" src="./bracket-view.js"&gt;&lt;/script&gt;</code>
+    then <code>&lt;bracket-view teams="A,B,C,D"&gt;&lt;/bracket-view&gt;</code>.
+    No build step, no frameworks, ~20KB.
+  </footer>
+</div>
+
+<script type="module">
+  import './bracket-view.js';
+
+  function makeTeams(...names) { return names; }
+
+  window.load32 = function() {
+    const b = document.querySelector('#b2');
+    if (!b) return;
+    const teams = [
+      'Brazil','Argentina','France','Spain','Germany','England','Portugal','Netherlands',
+      'Italy','Belgium','Croatia','Uruguay','Mexico','USA','Japan','Switzerland',
+      'Denmark','Poland','Sweden','Serbia','Australia','Senegal','Morocco','South Korea',
+      'Cameroon','Canada','Ecuador','Iran','Saudi Arabia','Qatar','Tunisia','Egypt'
+    ];
+    b._originalTeams = teams;
+    const data = b._generateFromTeams(teams, 'FIFA World Cup — Knockouts');
+    // Pre-seed a couple winners so it doesn't look empty
+    if (data.rounds[0] && data.rounds[0][0]) data.rounds[0][0].winner = 'a';
+    if (data.rounds[0] && data.rounds[0][3]) data.rounds[0][3].winner = 'b';
+    b.setData(data);
+    // Propagate AFTER setData so this._data is the new structure
+    b._propagateWinner(0, 0);
+    b._propagateWinner(0, 3);
+    b._render();
+  };
+
+  // Auto-load 32-team on first paint
+  window.load32();
+</script>
+</body>
+</html>
