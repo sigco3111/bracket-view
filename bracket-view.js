@@ -216,20 +216,22 @@ class BracketView extends HTMLElement {
   // ── Round page helpers ─────────────────────────────────────────────────────
 
   /**
-   * Compute "pages" for paper-fold layout. Each page shows a pair of rounds:
-   * page 0 = (rounds[0], rounds[1]), page 1 = (rounds[1], rounds[2]), ...
-   * Last page may include the final + 3rd-place playoff.
+   * Each page = ONE round (the canonical Google-mode "tabs per round" UX).
+   * Last page is the final + 3rd-place playoff.
+   *
+   *   Page 0 → R32   Page 1 → R16   Page 2 → R8   Page 3 → SF   Page 4 → Final
    */
   _buildPages(data) {
     if (!data) return [];
     const pages = [];
-    for (let r = 0; r < data.rounds.length - 1; r++) {
-      pages.push({ idx: r, from: r, to: r + 1 });
-    }
-    // Final page: just the final + 3rd-place playoff
-    if (data.rounds.length > 0) {
-      const lastIdx = data.rounds.length - 1;
-      pages.push({ idx: lastIdx, from: lastIdx, to: lastIdx, isFinal: true });
+    for (let r = 0; r < data.rounds.length; r++) {
+      pages.push({
+        idx: r,
+        round: r,
+        // Optionally preview the next round for connector visuals.
+        nextRound: r + 1 < data.rounds.length ? r + 1 : null,
+        isFinal: r === data.rounds.length - 1,
+      });
     }
     return pages;
   }
@@ -260,9 +262,7 @@ class BracketView extends HTMLElement {
       <nav class="bv-tabs" role="tablist">`;
 
     pages.forEach((p, i) => {
-      const fromLabel = this._roundLabel(p.from, rounds.length);
-      const toLabel = p.isFinal ? '우승' : this._roundLabel(p.to, rounds.length);
-      const label = p.isFinal ? `${fromLabel}` : `${fromLabel} → ${toLabel}`;
+      const label = this._roundLabel(p.round, rounds.length);
       html += `<button type="button" class="bv-tab ${i === activePage ? 'active' : ''}" data-page="${i}" role="tab" aria-selected="${i === activePage}">${this._esc(label)}</button>`;
     });
 
@@ -271,24 +271,27 @@ class BracketView extends HTMLElement {
     pages.forEach((p, i) => {
       html += `<section class="bv-page ${i === activePage ? 'active' : ''}" data-page="${i}">
         <div class="bv-page-header">
-          <span class="bv-page-from">${this._esc(this._roundLabel(p.from, rounds.length))}</span>`;
-      if (!p.isFinal) {
-        html += `<span class="bv-page-arrow" aria-hidden="true">→</span>
-          <span class="bv-page-to">${this._esc(this._roundLabel(p.to, rounds.length))}</span>`;
-      } else {
+          <span class="bv-page-title">${this._esc(this._roundLabel(p.round, rounds.length))}</span>`;
+      if (p.nextRound !== null && !p.isFinal) {
+        const nextLabel = this._roundLabel(p.nextRound, rounds.length);
+        html += `<span class="bv-page-sub">승자는 ${this._esc(nextLabel)}로</span>`;
+      } else if (p.isFinal) {
         html += `<span class="bv-page-sub">우승자 결정</span>`;
       }
-      html += `</div><div class="bv-columns">`;
-      // Left column = current round (p.from)
-      html += this._renderColumn(rounds, p.from, p.from, p.to === p.from ? null : p.to, 'from');
-      // Right column = next round (p.to) — only show if not the same (final)
-      if (!p.isFinal) {
-        html += this._renderColumn(rounds, p.to, p.from, p.to, 'to');
-        // connector overlay absolutely positioned inside .bv-columns
-        html += this._renderConnectors(rounds, p.from, p.to);
-      } else {
-        // Final page — show trophy column instead of next round
+      html += `</div><div class="bv-columns single-round">`;
+      // Single round column on the left
+      html += this._renderColumn(rounds, p.round, p.round, p.nextRound, 'from');
+      // Right side: a compact "next round slots" preview column showing
+      // partially assembled next-round matches as horizontal pipes, OR a
+      // trophy block on the final page.
+      if (p.isFinal) {
         html += this._renderTrophyColumn(rounds[rounds.length - 1][0]);
+      } else {
+        html += this._renderNextPreviewColumn(rounds, p.round, p.nextRound);
+      }
+      // Connector overlay inside .bv-columns grid area 'sv'
+      if (!p.isFinal) {
+        html += this._renderConnectors(rounds, p.round, p.nextRound);
       }
       html += `</div></section>`;
     });
@@ -459,6 +462,41 @@ class BracketView extends HTMLElement {
     if (match.status === 'scheduled') return '';
     // mock empty score placeholder when status is unclear
     return `<span class="bv-score-num"></span>`;
+  }
+
+  /**
+   * A compact "next round slots" preview column. We render ghost-like boxes
+   * showing where each next-round match's slots currently sit. A slot is filled
+   * with the propagated team if the corresponding half of the from round is
+   * decided; otherwise it's a thin TBD pipe.
+   */
+  _renderNextPreviewColumn(rounds, fromIdx, toIdx) {
+    if (toIdx == null) return '';
+    const fromMatches = rounds[fromIdx] || [];
+    const toMatches = rounds[toIdx] || [];
+    if (toMatches.length === 0) return '';
+    // Each to-match has two slots, each populated by one from-match.
+    // We render a 2-row card per to-match whose top row = first contributing
+    // from-match, bottom row = second contributing from-match.
+    let html = '<div class="bv-col bv-col-next-preview">';
+    toMatches.forEach((next, j) => {
+      const fromA = fromMatches[j * 2];
+      const fromB = fromMatches[j * 2 + 1];
+      const slotA = this._renderPreviewSlot(next.a, fromA, 'a', j * 2);
+      const slotB = this._renderPreviewSlot(next.b, fromB, 'b', j * 2 + 1);
+      html += `<article class="bv-card bv-card-preview" data-from-match="${fromA?.id || ''}" data-to-match="${next.id}">
+        ${slotA}${slotB}
+      </article>`;
+    });
+    html += '</div>';
+    return html;
+  }
+
+  _renderPreviewSlot(team, fromMatch, side, fromIndex) {
+    const isFilled = !!(team && !team.isTbd && !team.isBye);
+    return `<div class="bv-slot ${isFilled ? 'filled' : 'empty'}" data-side="${side}" data-from-idx="${fromIndex}">
+      <span class="bv-slot-label">${isFilled ? `${this._esc(team.displayName || team.name)}` : '다음 매치 승자'}</span>
+    </div>`;
   }
 
   _renderTrophyColumn(finalMatch) {
@@ -883,9 +921,9 @@ class BracketView extends HTMLElement {
         grid-template-areas: 'from sv to';
         align-items: start;
       }
-      .bv-columns.trophy-mode {
-        grid-template-columns: 1fr 12px 1fr;
-        grid-template-areas: 'from sv to';
+      /* Single-round pages: 1fr for matches + small 12px trench + 200px preview */
+      .bv-columns.single-round {
+        grid-template-columns: minmax(0, 1fr) 12px minmax(140px, 200px);
       }
       .bv-col-from { grid-area: from; }
       .bv-col-to { grid-area: to; }
@@ -934,6 +972,34 @@ class BracketView extends HTMLElement {
         /* Fixed height — required for connector overlays to align */
         height: 84px;
         box-sizing: border-box;
+      }
+      .bv-card-preview {
+        cursor: default;
+        opacity: .6;
+        height: 84px;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        border-style: dashed;
+      }
+      .bv-card-preview .bv-slot {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        background: rgba(255,255,255,.02);
+        color: var(--bv-text-dim);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .bv-card-preview .bv-slot.filled {
+        background: rgba(79,158,255,.06);
+        color: var(--bv-accent);
+        border-left: 2px solid var(--bv-accent);
       }
       .bv-card:hover { background: var(--bv-card-hover); border-color: rgba(79,158,255,.4); }
       .bv-card.focus {
