@@ -368,7 +368,7 @@ class BracketView extends HTMLElement {
     const toMatches = rounds[toIdx] || [];
     if (fromMatches.length === 0 || toMatches.length === 0) return '';
     // Card metrics must match the CSS numbers below exactly.
-    const CARD_H = 84;
+    const CARD_H = 92;
     const GAP = 10;
     const UNIT = CARD_H + GAP;
     const fromCount = fromMatches.length;
@@ -941,9 +941,11 @@ class BracketView extends HTMLElement {
         grid-template-areas: 'from sv to';
         align-items: start;
       }
-      /* Single-round pages: 1fr for matches + small 12px trench + 200px preview */
+      /* Single-round pages: equal-width match columns. Preview column shows
+         ghost slots but is sized identically to the from column so cards
+         look consistent. */
       .bv-columns.single-round {
-        grid-template-columns: minmax(0, 1fr) 12px minmax(140px, 200px);
+        grid-template-columns: 1fr 12px 1fr;
       }
       .bv-col-from { grid-area: from; }
       .bv-col-to { grid-area: to; }
@@ -995,31 +997,37 @@ class BracketView extends HTMLElement {
       }
       .bv-card-preview {
         cursor: default;
-        opacity: .6;
-        height: 84px;
-        padding: 8px;
+        opacity: .85;
+        height: 92px;
+        padding: 8px 10px;
         display: flex;
         flex-direction: column;
         gap: 4px;
-        border-style: dashed;
+        border-style: solid;
       }
       .bv-card-preview .bv-slot {
         flex: 1;
-        display: flex;
+        display: grid;
+        grid-template-columns: 24px minmax(0, 1fr) 28px;
         align-items: center;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 11px;
+        gap: 6px;
+        padding: 2px 4px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
         background: rgba(255,255,255,.02);
         color: var(--bv-text-dim);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        height: 28px;
+        box-sizing: border-box;
+        min-width: 0;
       }
       .bv-card-preview .bv-slot.filled {
-        background: rgba(79,158,255,.06);
+        background: rgba(79,158,255,.08);
         color: var(--bv-accent);
-        border-left: 2px solid var(--bv-accent);
+        border-left: 3px solid var(--bv-accent);
       }
       .bv-card:hover { background: var(--bv-card-hover); border-color: rgba(79,158,255,.4); }
       .bv-card.focus {
@@ -1028,48 +1036,104 @@ class BracketView extends HTMLElement {
         transform: scale(1.02);
       }
       .bv-root.has-focus .bv-card:not(.focus) { opacity: .28; }
+      .bv-card {
+        background: var(--bv-card);
+        border: 1px solid var(--bv-line);
+        border-radius: 10px;
+        padding: 8px 10px;
+        cursor: pointer;
+        transition: background .25s, border-color .25s, transform .35s cubic-bezier(.4,0,.2,1), opacity .35s;
+        position: relative;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        /* LOCKED height — required for connector overlays to align */
+        height: 92px;
+      }
       .bv-card-meta {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 8px;
-        font-size: 11px;
+        gap: 8px;
+        height: 16px;
+        line-height: 16px;
+        font-size: 10px;
         color: var(--bv-text-dim);
+        overflow: hidden;
+      }
+      .bv-card-date {
+        font-size: 10px;
+        color: var(--bv-text-dim);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1 1 auto;
+        min-width: 0;
       }
       .bv-card-status {
-        font-size: 10px;
-        font-weight: 600;
+        font-size: 9px;
+        font-weight: 700;
         padding: 2px 6px;
         border-radius: 4px;
         background: rgba(255,255,255,.04);
         text-transform: uppercase;
         letter-spacing: 0.05em;
+        white-space: nowrap;
+        flex: 0 0 auto;
       }
       .status-fulltime { background: rgba(34,197,94,.18); color: var(--bv-winner); }
       .status-live { background: rgba(239,68,68,.18); color: var(--bv-danger); }
       .status-scheduled { background: rgba(255,255,255,.06); color: var(--bv-text-dim); }
 
-      .bv-card-teams { display: flex; flex-direction: column; gap: 6px; }
+      .bv-card-teams { display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; min-height: 0; }
       .bv-team {
         display: grid;
-        grid-template-columns: 22px 1fr 32px 16px;
+        grid-template-columns: 24px minmax(0, 1fr) 28px 16px;
         align-items: center;
         gap: 6px;
         cursor: pointer;
-        padding: 4px 0;
+        padding: 2px 4px;
         border-radius: 6px;
         transition: background .2s;
+        min-width: 0;
+        height: 28px;
+        box-sizing: border-box;
       }
       .bv-team:hover { background: rgba(79,158,255,.08); }
-      .bv-team-flag { font-size: 16px; line-height: 1; }
+      .bv-team-flag {
+        font-size: 18px;
+        line-height: 1;
+        width: 24px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 24px;
+      }
       .bv-team-name {
         font-size: 13px;
         font-weight: 500;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        min-width: 0;
       }
-      .bv-team-score { font-variant-numeric: tabular-nums; text-align: right; font-weight: 600; font-size: 13px; }
+      .bv-team-score {
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--bv-text);
+        flex: 0 0 28px;
+      }
+      .bv-team-from {
+        color: var(--bv-accent);
+        font-size: 11px;
+        text-align: center;
+        flex: 0 0 16px;
+        width: 16px;
+      }
       .bv-team.winner .bv-team-name { color: var(--bv-winner); font-weight: 700; }
       .bv-team.winner .bv-team-score { color: var(--bv-winner); }
       .bv-team.loser .bv-team-name { color: var(--bv-loser); text-decoration: line-through; }
@@ -1213,8 +1277,13 @@ class BracketView extends HTMLElement {
         .bv-title { font-size: 14px; }
         .bv-page { padding: 12px 4px; }
         .bv-columns { gap: 10px; }
-        .bv-team { grid-template-columns: 22px 1fr 28px 14px; gap: 4px; }
+        .bv-team { grid-template-columns: 22px minmax(0, 1fr) 26px 14px; gap: 4px; }
         .bv-team-name { font-size: 12px; }
+        .bv-team-flag { font-size: 16px; flex: 0 0 22px; width: 22px; }
+        .bv-team-score { flex: 0 0 26px; font-size: 12px; }
+        .bv-team-from { flex: 0 0 14px; width: 14px; font-size: 10px; }
+        .bv-card { padding: 6px 8px; height: 84px; }
+        .bv-card-meta { height: 14px; line-height: 14px; font-size: 9px; }
       }
       @media (prefers-reduced-motion: reduce) {
         .bv-card, .bv-team, .connector, .bv-tab { transition: none !important; }
