@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>&lt;bracket-view&gt; Demo</title>
+<title>&lt;bracket-view&gt; v2 — Paper-fold demo</title>
 <style>
   body {
     margin: 0;
@@ -13,36 +13,30 @@
     min-height: 100vh;
   }
   .page {
-    max-width: 1200px;
+    max-width: 1100px;
     margin: 0 auto;
-    padding: 32px 20px 80px;
+    padding: 24px 14px 80px;
   }
   h1 {
-    margin: 0 0 8px;
-    font-size: 28px;
+    margin: 0 0 6px;
+    font-size: 24px;
     font-weight: 700;
     letter-spacing: -0.02em;
   }
   .lede {
     color: #9ca3af;
-    margin: 0 0 32px;
-    font-size: 14px;
+    margin: 0 0 24px;
+    font-size: 13px;
     line-height: 1.5;
   }
-  .demo {
-    margin-bottom: 48px;
-  }
+  .demo { margin-bottom: 48px; }
   .demo h2 {
-    margin: 0 0 12px;
-    font-size: 18px;
+    margin: 0 0 10px;
+    font-size: 17px;
     font-weight: 600;
     color: #e5e7eb;
   }
-  .demo .note {
-    margin: 0 0 12px;
-    color: #9ca3af;
-    font-size: 13px;
-  }
+  .demo .note { margin: 0 0 12px; color: #9ca3af; font-size: 12.5px; }
   badge {
     display: inline-block;
     padding: 2px 8px;
@@ -54,33 +48,13 @@
     margin-right: 6px;
     vertical-align: middle;
   }
-  .controls-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-  }
-  .controls-row button {
-    background: #1a1d24;
-    color: #e5e7eb;
-    border: 1px solid #2a2f3a;
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all .2s;
-  }
-  .controls-row button:hover {
-    background: #252932;
-    border-color: #4f9eff;
-  }
   footer {
     margin-top: 48px;
     padding-top: 24px;
     border-top: 1px solid #2a2f3a;
     color: #9ca3af;
     font-size: 12px;
+    line-height: 1.6;
   }
   footer code {
     background: #1a1d24;
@@ -92,73 +66,111 @@
 </head>
 <body>
 <div class="page">
-  <h1>&lt;bracket-view&gt;</h1>
-  <p class="lede">
-    A self-contained, zero-dependency, zero-build interactive tournament bracket Web Component.
-    Inspired by Google Search's elegant bracket visualization — smooth focus, dim non-selected cards, propagating winners.
-  </p>
+  <h1>&lt;bracket-view&gt; <span style="color:#9ca3af;font-size:14px;font-weight:500">v2 — 종이접기 모드</span></h1>
+  <p class="lede">탭을 누르거나 옆으로 스크롤·스와이프하면 라운드 단위로 페이지가 넘어가요. 각 페이지는 (현재 라운드 + 다음 라운드) 두 컬럼. 카드의 팀을 클릭하면 승자 처리, 카드 본체를 클릭하면 포커싱. 예시로 2026 FIFA 월드컵 데이터를 일부 미리 채워뒀어요.</p>
 
   <section class="demo">
-    <h2><badge>16 teams · declarative</badge>Esports Cup</h2>
-    <p class="note">Click a team to advance them. Click an empty match body to focus it.</p>
-    <div class="controls-row">
-      <button onclick="document.querySelector('#b1').randomFill()">⚄ Random fill</button>
-      <button onclick="document.querySelector('#b1').reset()">↺ Reset</button>
-    </div>
-    <bracket-view id="b1" teams="T1,GenG,HLE,DK,CFO,PSG,BRO,TL,G2,FNC,MAD,KOI,VKE,LNG,BLG,HLE2" title="Worlds Group Stage — Knockouts"></bracket-view>
-  </section>
-
-  <section class="demo">
-    <h2><badge>32 teams · programmatic</badge>FIFA World Cup Style</h2>
-    <p class="note">Data passed via <code>setData()</code> with pre-seeded semi-final winners to show a near-finished state.</p>
-    <div class="controls-row">
-      <button onclick="document.querySelector('#b2').randomFill()">⚄ Random fill</button>
-      <button onclick="document.querySelector('#b2').reset()">↺ Reset</button>
-    </div>
-    <bracket-view id="b2" title="FIFA World Cup — Knockouts"></bracket-view>
-  </section>
-
-  <section class="demo">
-    <h2><badge>4 teams · minimal</badge>Small Test</h2>
-    <p class="note">Only 4 participants — useful for embedding in sidebars and docs.</p>
-    <bracket-view teams="Apple,Banana,Cherry,Date" title="Fruit Bracket"></bracket-view>
+    <h2><badge>32 teams</badge>FIFA 월드컵 2026 — 대진표</h2>
+    <p class="note">32강에서 시작 → 결승까지 5 라운드. 탭을 클릭하면 페이지가 점프, 옆으로 스와이프하면 한 단계 전진. 카드의 팀 행을 클릭하면 승자가 결정되고 다음 라운드로 자동 반영.</p>
+    <bracket-view id="worldcup" title="FIFA World Cup — Knockouts"></bracket-view>
   </section>
 
   <footer>
-    Drop in anywhere: <code>&lt;script type="module" src="./bracket-view.js"&gt;&lt;/script&gt;</code>
-    then <code>&lt;bracket-view teams="A,B,C,D"&gt;&lt;/bracket-view&gt;</code>.
-    No build step, no frameworks, ~20KB.
+    임포트 한 줄: <code>&lt;script type="module" src="./bracket-view.js"&gt;&lt;/script&gt;</code><br>
+    사용법 한 줄: <code>&lt;bracket-view teams="A,B,C,D,..." title="Tournament"&gt;&lt;/bracket-view&gt;</code><br>
+    또는 프로그래매틱: <code>el.setData({ title, rounds })</code> · <code>el.randomFill()</code> · <code>el.reset()</code><br>
+    Layout 토글: <code>el.setLayout('flat')</code> ↔ <code>'paper-fold'</code>
   </footer>
 </div>
 
 <script type="module">
   import './bracket-view.js';
 
-  function makeTeams(...names) { return names; }
+  // Pre-seeded partial World Cup bracket — like Google's card with some matches decided.
+  // The 32 teams from the cup, plus date+status+score for a realistic demo.
+  const TEAMS = [
+    '🇦🇷 아르헨티나','🇦🇺 호주','🇧🇪 벨기에','🇧🇷 브라질','🇨🇦 캐나다','🇨🇲 카메룬','🇨🇷 코스타리카','🇭🇷 크로아티아',
+    '🇩🇰 덴마크','🇪🇬 이집트','🏴 잉글랜드','🇪🇪 에스토니아','🇫🇷 프랑스','🇩🇪 독일','🇮🇪 아일랜드','🇮🇹 이탈리아',
+    '🇯🇵 일본','🇲🇽 멕시코','🇲🇦 모로코','🇳🇱 네덜란드','🇳🇿 뉴질랜드','🇳🇴 노르웨이','🇵🇱 폴란드','🇵🇹 포르투갈',
+    '🇸🇦 사우디','🇸🇳 세네갈','🇷🇸 세르비아','🇪🇸 스페인','🇸🇪 스웨덴','🇨🇭 스위스','🇺🇸 미국','🇺🇾 우루과이'
+  ];
 
-  window.load32 = function() {
-    const b = document.querySelector('#b2');
-    if (!b) return;
-    const teams = [
-      'Brazil','Argentina','France','Spain','Germany','England','Portugal','Netherlands',
-      'Italy','Belgium','Croatia','Uruguay','Mexico','USA','Japan','Switzerland',
-      'Denmark','Poland','Sweden','Serbia','Australia','Senegal','Morocco','South Korea',
-      'Cameroon','Canada','Ecuador','Iran','Saudi Arabia','Qatar','Tunisia','Egypt'
+  function buildPartialBracket() {
+    // Reuse the component's own generator for the structure
+    const tmp = document.createElement('bracket-view');
+    tmp.style.display = 'none';
+    document.body.appendChild(tmp);
+    const data = tmp._generateFromTeams(TEAMS, 'FIFA World Cup — Knockouts');
+    document.body.removeChild(tmp);
+
+    // Augment with realistic per-match details and a handful of decided matches.
+    const enrich = (r, m, patch) => {
+      Object.assign(data.rounds[r][m], patch);
+      if (patch.winner) {
+        // propagate via local copy of logic
+        const next = data.rounds[r + 1];
+        if (next) {
+          const nextMatch = next[Math.floor(m / 2)];
+          const source = data.rounds[r][m];
+          const winnerTeam = patch.winner === 'a' ? source.a : source.b;
+          if (m % 2 === 0) nextMatch.a = winnerTeam;
+          else nextMatch.b = winnerTeam;
+          nextMatch.winner = null;
+          nextMatch.prev = nextMatch.prev || { a: null, b: null };
+          if (m % 2 === 0) nextMatch.prev.a = source.id;
+          else nextMatch.prev.b = source.id;
+        }
+      }
+    };
+
+    // Round of 32 — set dates/kickoffs/some scores
+    const dates = ['7.10 (수) 오전 4:00','7.10 (수) 오전 8:00','7.11 (목) 오전 4:00','7.11 (목) 오전 8:00',
+                   '7.12 (금) 오전 4:00','7.12 (금) 오전 8:00','7.13 (토) 오전 4:00','7.13 (토) 오전 8:00',
+                   '7.14 (일) 오전 4:00','7.14 (일) 오전 8:00','7.15 (월) 오전 4:00','7.15 (월) 오전 8:00',
+                   '7.16 (화) 오전 4:00','7.16 (화) 오전 8:00','7.17 (수) 오전 4:00','7.17 (수) 오전 8:00'];
+    data.rounds[0].forEach((m, i) => {
+      enrich(0, i, { date: dates[i], kickoff: dates[i] });
+    });
+
+    // Decide some Round-of-32 matches (so the demo isn't blank)
+    const decided = [
+      [0, 'a'], [1, 'b'], // Argentina wins, Croatia wins (over local patch)
+      [4, 'a'], [5, 'a'], // France advances
+      [8, 'b'], [9, 'a'], // England wins, Argentina
+      [12, 'a'], [13, 'b'],
     ];
-    b._originalTeams = teams;
-    const data = b._generateFromTeams(teams, 'FIFA World Cup — Knockouts');
-    // Pre-seed a couple winners so it doesn't look empty
-    if (data.rounds[0] && data.rounds[0][0]) data.rounds[0][0].winner = 'a';
-    if (data.rounds[0] && data.rounds[0][3]) data.rounds[0][3].winner = 'b';
-    b.setData(data);
-    // Propagate AFTER setData so this._data is the new structure
-    b._propagateWinner(0, 0);
-    b._propagateWinner(0, 3);
-    b._render();
-  };
+    for (const [i, side] of decided) {
+      enrich(0, i, { winner: side, status: 'fulltime',
+        scores: { a: side === 'a' ? 2 : 1, b: side === 'b' ? 2 : 1 },
+        score: side === 'a' ? [2,1] : [1,2] });
+    }
 
-  // Auto-load 32-team on first paint
-  window.load32();
+    // Decide a couple of Round-of-16 matches as well
+    const r16 = data.rounds[1];
+    if (r16 && r16[0]) {
+      r16[0].status = 'live';
+      r16[0].scores = { a: 1, b: 1 };
+      r16[0].date = '어제 오전 5:00';
+    }
+    if (r16 && r16[3]) {
+      r16[3].status = 'fulltime';
+      r16[3].winner = 'a';
+      r16[3].scores = { a: 3, b: 1 };
+      r16[3].date = '7.15 (월) 오전 4:00';
+      // propagate
+      enrich(1, 3, { winner: 'a', status: 'fulltime', scores: { a: 3, b: 1 } });
+    }
+
+    return data;
+  }
+
+  const el = document.querySelector('#worldcup');
+  el.setData(buildPartialBracket());
+
+  // Demo event listener (open dev tools to see)
+  el.addEventListener('match-decided', (e) => {
+    console.log('decided', e.detail);
+  });
 </script>
 </body>
 </html>
