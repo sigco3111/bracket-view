@@ -937,15 +937,16 @@ class BracketView extends HTMLElement {
 
       .bv-columns {
         display: grid;
-        grid-template-columns: 1fr 12px 1fr;
+        grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr);
         grid-template-areas: 'from sv to';
         align-items: start;
       }
       /* Single-round pages: equal-width match columns. Preview column shows
          ghost slots but is sized identically to the from column so cards
-         look consistent. */
+         look consistent. minmax(0, 1fr) prevents the wider column from
+         claiming more space due to its intrinsic min-content size. */
       .bv-columns.single-round {
-        grid-template-columns: 1fr 12px 1fr;
+        grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr);
       }
       .bv-col-from { grid-area: from; }
       .bv-col-to { grid-area: to; }
