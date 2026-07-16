@@ -884,21 +884,30 @@ class BracketView extends HTMLElement {
         display: flex;
         overflow-x: auto;
         overflow-y: hidden;
-        scroll-snap-type: x mandatory;
+        scroll-snap-type: x proximity;
         scroll-behavior: smooth;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
         position: relative;
+        /* Lock vertical position across pages — no vertical snap, no
+           vertical jump when the user swipes between pages. */
+        overscroll-behavior-y: none;
       }
       .bv-track::-webkit-scrollbar { display: none; }
       .bv-page {
         flex: 0 0 100%;
         scroll-snap-align: start;
-        scroll-snap-stop: always;
+        /* don't snap on the cross-axis (vertical) — this was previously
+           implicitly snapping to top on every horizontal scroll, which the
+           user found jarring. */
+        scroll-snap-stop: normal;
         padding: 16px 8px;
         display: flex;
         flex-direction: column;
         gap: 12px;
+        /* Equal-height pages so vertical scroll never appears and never
+           needs to align at the top of any specific page */
+        align-self: stretch;
       }
       .bv-page-header {
         display: flex;
