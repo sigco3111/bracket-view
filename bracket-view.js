@@ -950,6 +950,7 @@ class BracketView extends HTMLElement {
       }
       .bv-col-from { grid-area: from; }
       .bv-col-to { grid-area: to; }
+      .bv-col-next-preview { grid-area: to; }
       .bv-col-trophy { grid-area: to; }
       .bv-col-trophy-cell { grid-area: to; }
       .bv-connectors {
