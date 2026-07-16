@@ -691,7 +691,8 @@ class BracketView extends HTMLElement {
 
     // Tab strip
     root.querySelectorAll('.bv-tab').forEach(tabEl => {
-      tabEl.addEventListener('click', () => {
+      tabEl.addEventListener('click', (e) => {
+        e.preventDefault();
         const pageIdx = parseInt(tabEl.dataset.page, 10);
         this._jumpToPage(pageIdx);
       });
@@ -742,14 +743,11 @@ class BracketView extends HTMLElement {
       const newPage = parseInt(best.target.dataset.page, 10);
       if (newPage === this._activePage) return;
       this._activePage = newPage;
-      // update tabs without full re-render
+      // Update tabs without triggering any scrollIntoView (would jump doc).
       root.querySelectorAll('.bv-tab').forEach((tab, i) => {
         const isActive = i === newPage;
         tab.classList.toggle('active', isActive);
         tab.setAttribute('aria-selected', String(isActive));
-        if (isActive) {
-          tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        }
       });
     };
 
@@ -766,9 +764,22 @@ class BracketView extends HTMLElement {
     if (!root) return;
     const track = root.querySelector('.bv-track');
     const page = root.querySelector(`.bv-page[data-page="${pageIdx}"]`);
-    if (track && page) {
-      page.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+    if (!track || !page) return;
+    // Compute target scrollLeft for the page's left edge inside the track.
+    // We deliberately do NOT call scrollIntoView on the page element — that
+    // would risk scrolling the document around the bracket-view itself.
+    const target = page.offsetLeft;
+    if (typeof track.scrollTo === 'function') {
+      track.scrollTo({ left: target, top: 0, behavior: 'smooth' });
+    } else {
+      track.scrollLeft = target;
     }
+    this._activePage = pageIdx;
+    root.querySelectorAll('.bv-tab').forEach((tab, i) => {
+      const isActive = i === pageIdx;
+      tab.classList.toggle('active', isActive);
+      tab.setAttribute('aria-selected', String(isActive));
+    });
   }
 
   // ── Swipe gesture (touchstart/touchend) ───────────────────────────────────
