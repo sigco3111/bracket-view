@@ -280,10 +280,12 @@ class BracketView extends HTMLElement {
       }
       html += `</div><div class="bv-columns">`;
       // Left column = current round (p.from)
-      html += this._renderColumn(rounds, p.from, p.from, p.to === p.from ? null : p.to);
+      html += this._renderColumn(rounds, p.from, p.from, p.to === p.from ? null : p.to, 'from');
       // Right column = next round (p.to) — only show if not the same (final)
       if (!p.isFinal) {
-        html += this._renderColumn(rounds, p.to, p.from, p.to);
+        html += this._renderColumn(rounds, p.to, p.from, p.to, 'to');
+        // connector overlay absolutely positioned inside .bv-columns
+        html += this._renderConnectors(rounds, p.from, p.to);
       } else {
         // Final page — show trophy column instead of next round
         html += this._renderTrophyColumn(rounds[rounds.length - 1][0]);
@@ -324,15 +326,87 @@ class BracketView extends HTMLElement {
     this._attachEvents();
   }
 
-  _renderColumn(rounds, roundIdx, prevRoundIdx, nextRoundIdx) {
+  _renderColumn(rounds, roundIdx, prevRoundIdx, nextRoundIdx, role) {
     const matches = rounds[roundIdx] || [];
-    const colClass = `bv-col bv-col-${roundIdx}`;
+    const roleClass = role === 'from' ? 'bv-col-from' : role === 'to' ? 'bv-col-to' : '';
+    const colClass = `bv-col ${roleClass}`.trim();
     let html = `<div class="${colClass}">`;
     matches.forEach((match, m) => {
       html += this._renderMatchCard(match, roundIdx, m);
     });
     html += `</div>`;
     return html;
+  }
+
+  /**
+   * Build the SVG overlay of connector lines between the "from" column and the
+   * "to" column on the same paper-fold page. Each pair of consecutive "from"
+   * matches converges to a single "to" match via a rectangular M-curve.
+   *
+   * Coordinate model (assumes CSS gives every card a fixed height and a
+   * constant gap between cards in `.bv-col { flex; column; gap }`):
+   *
+   *   - The .bv-columns container is `position: relative`.
+   *   - The .bv-col:first-child is the "from" column; .bv-col:nth-child(2) is
+   *     the "to" column.
+   *   - The SVG overlay sits absolutely inside .bv-columns with width=100% and
+   *     a viewBox matched to the container's measured size after layout.
+   *
+   * Because we can't know pixel positions before the browser lays them out,
+   * the SVG uses a 0..1 normalized viewBox and we set preserveAspectRatio=none
+   * plus 100% width/height. The y of "from" match i is:
+   *   y_from_i = (i + 0.5) * (CARD_H + GAP)  — centerline of card i,
+   *   then we need to subtract the column start offset if any. We default the
+   *   column to start at y=0 and use flex `align-items: start` to keep cards
+   *   anchored at the top of the column.
+   */
+  _renderConnectors(rounds, fromIdx, toIdx) {
+    const fromMatches = rounds[fromIdx] || [];
+    const toMatches = rounds[toIdx] || [];
+    if (fromMatches.length === 0 || toMatches.length === 0) return '';
+    // Card metrics must match the CSS numbers below exactly.
+    const CARD_H = 84;
+    const GAP = 10;
+    const UNIT = CARD_H + GAP;
+    const fromCount = fromMatches.length;
+    const toCount = toMatches.length;
+    // Vertical pixel offsets of each card's center within the column.
+    // Card 0 centerline: UNIT / 2 (since unit = card + gap, and card height is
+    // UNIT - GAP).
+    const fromY = (i) => Math.round(i * UNIT + UNIT / 2);
+    const toY = (j) => Math.round((j + 0.5) * UNIT * (fromCount / toCount));
+
+    // Use a concrete width matching the .bv-columns gap (12px). The wrapper
+    // is positioned absolutely inside .bv-columns between the two columns,
+    // so its left/right naturally align with the column borders.
+    const totalH = fromCount * UNIT;
+
+    let paths = '';
+    for (let i = 0; i < fromCount; i++) {
+      const targetJ = Math.floor(i / 2);
+      const match = fromMatches[i];
+      const winnerA = match.winner === 'a';
+      const winnerB = match.winner === 'b';
+      const decided = !!match.winner;
+      const y1 = fromY(i);
+      const y2 = toY(targetJ);
+      // Horizontal: enter at x=0, exit at x=W (we set W via parent CSS).
+      // For a 12px-wide connector wrapper, a 6px straight horizontal segment
+      // exits the card, drops/rises in the middle, and re-enters the next.
+      const W = 12;
+      const midX = W / 2;
+      const d = `M 0 ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${W} ${y2}`;
+      let activeCls = '';
+      if (decided) {
+        activeCls = ' active';
+        // If this is the LOSER side of a decided pair, fade it (dashed).
+        if (i % 2 === 0 && winnerB) activeCls += ' inactive-side';
+        else if (i % 2 === 1 && winnerA) activeCls += ' inactive-side';
+      }
+      paths += `<path class="bv-connector${activeCls}" data-from-match="${match.id}" data-to-match="${toMatches[targetJ].id}" d="${d}" />`;
+    }
+
+    return `<svg class="bv-connectors" xmlns="${SVG_NS}" width="12" height="${totalH}" viewBox="0 0 12 ${totalH}" preserveAspectRatio="none">${paths}</svg>`;
   }
 
   _renderMatchCard(match, roundIdx, matchIdx) {
@@ -805,11 +879,43 @@ class BracketView extends HTMLElement {
 
       .bv-columns {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
+        grid-template-columns: 1fr 12px 1fr;
+        grid-template-areas: 'from sv to';
         align-items: start;
       }
-      .bv-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+      .bv-columns.trophy-mode {
+        grid-template-columns: 1fr 12px 1fr;
+        grid-template-areas: 'from sv to';
+      }
+      .bv-col-from { grid-area: from; }
+      .bv-col-to { grid-area: to; }
+      .bv-col-trophy { grid-area: to; }
+      .bv-col-trophy-cell { grid-area: to; }
+      .bv-connectors {
+        grid-area: sv;
+        width: 12px;
+        height: auto;
+        pointer-events: none;
+        overflow: visible;
+      }
+      .bv-connector {
+        stroke: var(--bv-line);
+        stroke-width: 1.5;
+        fill: none;
+        opacity: 0.85;
+        transition: stroke .5s ease, opacity .35s ease;
+      }
+      .bv-connector.active { stroke: var(--bv-accent); opacity: 1; }
+      .bv-connector.inactive-side { stroke-dasharray: 3 3; opacity: 0.4; }
+      .bv-root.has-focus .bv-connector { opacity: 0.25; }
+      .bv-col {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-width: 0;
+        align-items: stretch;
+        position: relative;
+      }
       .bv-col-trophy {
         display: flex;
         align-items: center;
@@ -825,6 +931,9 @@ class BracketView extends HTMLElement {
         cursor: pointer;
         transition: background .25s, border-color .25s, transform .35s cubic-bezier(.4,0,.2,1), opacity .35s;
         position: relative;
+        /* Fixed height — required for connector overlays to align */
+        height: 84px;
+        box-sizing: border-box;
       }
       .bv-card:hover { background: var(--bv-card-hover); border-color: rgba(79,158,255,.4); }
       .bv-card.focus {

@@ -195,6 +195,29 @@ python3 -m http.server 8000
 # → open http://localhost:8000
 ```
 
+## What's new in v3
+
+v2 → v3 adds **connector lines** between round pairs in paper-fold mode, so each page now visually shows the
+M-curve that ties current and next rounds together (matching Google Search's tournament card).
+
+| Where | What it does |
+|---|---|
+| `.bv-connector`     | Gray rectangular M-curve between two cards |
+| `.bv-connector.active` | Sky-blue after the source match is decided (winner propagated) |
+| `.bv-connector.inactive-side` | Dashed / faded for the LOSER side of a decided pair |
+| Grid `1fr 12px 1fr` | Reserves a 12px-wide trench between the two columns so the connector SVG sits exactly between card edges |
+
+CSS knobs to tune:
+```css
+.bv-card { height: 84px; }    /* card vertical metric — connector math assumes this */
+.bv-col  { gap: 10px; }       /* card-to-card gap — connector math assumes this */
+.bv-connectors { grid-area: sv; }   /* grid slot for the connector SVG */
+```
+
+The math (constant-time):
+- For card `i` in the from column, the line's vertical midpoint y1 = `i × (CARD_H + GAP) + (CARD_H + GAP) / 2`
+- It curves to the next round's match `Math.floor(i / 2)`, with y2 scaled to that column's vertical centre
+
 ## What's new in v2 vs v1
 
 | | v1 (flat) | v2 (paper-fold default) |
