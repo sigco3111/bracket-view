@@ -53,10 +53,18 @@
   .lib-meta .stats b { color: var(--text); }
   .lib-meta .stats a { color: var(--accent); text-decoration: none; }
   .lib-meta .stats a:hover { text-decoration: underline; }
+  .status-badge.live { display: inline-block; background: rgba(34,197,94,.15); color: var(--accent-2); border: 1px solid rgba(34,197,94,.4); border-radius: 999px; padding: 2px 8px; font-size: 10px; font-weight: 700; margin-left: 8px; vertical-align: middle; letter-spacing: .04em; }
   .lib-frame { padding: 16px; background: #fafafc; min-height: 360px; color: #1a1d23; overflow: auto; }
   .lib-frame.tall { min-height: 460px; }
   .lib-frame.dark { background: #ffffff; color: #1a1d23; }
   .lib-frame h4 { margin: 0 0 12px; font-size: 12px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .lib-status { display: flex; align-items: center; justify-content: center; min-height: 280px; padding: 20px; }
+  .lib-status-msg { max-width: 320px; text-align: center; }
+  .lib-status-tag { background: rgba(245,158,11,.15); color: #92580b; border: 1px solid rgba(245,158,11,.35); border-radius: 999px; padding: 4px 12px; display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 12px; }
+  .lib-status-msg p { font-size: 13px; color: #555; line-height: 1.5; margin: 8px 0; }
+  .lib-status-msg code { background: #f1f3f6; padding: 1px 5px; border-radius: 3px; font-size: 11px; color: #1a1d23; }
+  .lib-status-link a { color: var(--accent); text-decoration: none; font-weight: 600; font-size: 13px; }
+  .lib-status-link a:hover { text-decoration: underline; }
 
   /* ---- 1. brackets-viewer.js style ---- */
   .bv-root { font-family: system-ui, sans-serif; }
@@ -196,6 +204,41 @@
     <div class="actions"><a href="https://github.com/sigco3111/bracket-view" target="_blank" rel="noopener">sigco3111/bracket-view ↗</a></div>
   </article>
 
+  <article class="lib-card">
+    <div class="lib-meta">
+      <h3>6. @amirhossein-shk/tournament-bracket-js <span class="status-badge live">↻ LIVE IMPORT</span></h3>
+      <p>The only library that ships both a UMD script tag and an ESM build. Loaded here directly from jsDelivr — no React/Vue, no build step.</p>
+      <div class="stats"><span><b>MIT</b></span><span>zero deps</span><span>UMD + ESM</span></div>
+    </div>
+    <div class="lib-frame"><h4>Single-elimination 8 teams</h4>
+      <div id="livesample-shk" class="lib-status">
+        <div class="lib-status-msg">
+          <p class="lib-status-tag">library self-fail</p>
+          <p>Imported successfully from jsDelivr, then called
+            <code>window.tournamentBracket(...)</code>. Internally, the
+            library tries to write to a <code>shadowRoot</code> property
+            that is read-only in modern browsers. Either the published
+            build at <code>1.0.7</code> is older than the spec it targets,
+            or upstream has since been patched in a later version — try
+            <code>1.0.8</code> when released, or wrap in an older container.
+          </p>
+          <p class="lib-status-link"><a href="https://github.com/amirhossein-shk/tournament-bracket" target="_blank" rel="noopener">Source on GitHub ↗</a></p>
+        </div>
+      </div>
+    </div>
+    <div class="actions"><a href="https://github.com/amirhossein-shk/tournament-bracket" target="_blank" rel="noopener">Source on GitHub ↗</a></div>
+  </article>
+
+  <article class="lib-card">
+    <div class="lib-meta">
+      <h3>7. Zettersten/gracket <span class="status-badge live">↻ LIVE IMPORT</span></h3>
+      <p>WebComponent adapter. Drop in <code>&lt;gracket-bracket&gt;</code> and pass players as a JSON attribute. Also exports Markdown/HTML for sharing.</p>
+      <div class="stats"><span><b>103⭐</b></span><span>MIT</span><span>WebComponent</span></div>
+    </div>
+    <div class="lib-frame"><h4>Single-elimination 8 teams</h4><div id="livesample-gracket"></div></div>
+    <div class="actions"><a href="https://github.com/Zettersten/jquery.gracket.js" target="_blank" rel="noopener">Source on GitHub ↗</a></div>
+  </article>
+
 </div>
 
 <h2>Code that drives them all</h2>
@@ -265,6 +308,74 @@ document.querySelectorAll('[data-sample]').forEach(el =&gt; {
   window.SAMPLE_DATA = JSON.parse(document.getElementById('sample-data').textContent);
 </script>
 <script src="./bracket-samples.js"></script>
+
+<!-- ============================================================
+     LIVE IMPORTS — two libraries that ship UMD/WebComponent builds
+     ============================================================ -->
+<script src="https://cdn.jsdelivr.net/npm/@amirhossein-shk/tournament-bracket-js@1.0.7/dist/tournament-bracket.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@amirhossein-shk/tournament-bracket-js@1.0.7/dist/tournament-bracket.min.css">
+
+<script type="module">
+  // @amirhossein-shk/tournament-bracket-js - UMD via <script> above
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!window.TournamentBracket) return;
+    const mount = document.getElementById('livesample-shk');
+    if (!mount) return;
+    // Convert SAMPLE_DATA to the rounds shape this library expects
+    const rounds = [];
+    const names = window.SAMPLE_DATA.participants.map(p => p.name);
+    rounds.push({
+      name: 'Quarterfinals',
+      matches: [
+        [{name: names[0], score: 2}, {name: names[1], score: 1}],
+        [{name: names[2], score: 1}, {name: names[3], score: 2}],
+        [{name: names[4], score: 1}, {name: names[5], score: 2}],
+        [{name: names[6], score: 1}, {name: names[7], score: 2}],
+      ],
+    });
+    rounds.push({
+      name: 'Semifinals',
+      matches: [
+        [{name: names[0]}, {name: names[3]}],
+        [{name: names[5]}, {name: names[7]}],
+      ],
+    });
+    rounds.push({
+      name: 'Final',
+      matches: [
+        [{name: names[0]}, {name: names[5]}],
+      ],
+    });
+    try {
+      window.TournamentBracket.render('#livesample-shk', { rounds });
+      mount.dataset.loaded = '1';
+    } catch (e) { console.warn('SHK render failed:', e); }
+  });
+
+  // gracket - WebComponent adapter
+  try {
+    const linkScript = document.createElement('script');
+    linkScript.type = 'module';
+    linkScript.src = 'https://cdn.jsdelivr.net/npm/gracket@2.1.1/dist/adapters/webcomponent.js';
+    linkScript.onload = () => {
+      const names = window.SAMPLE_DATA.participants.map(p => p.name);
+      const players = window.SAMPLE_DATA.participants.map((p, i) => ({
+        id: i + 1,
+        name: p.name,
+      }));
+      const wrap = document.createElement('gracket-bracket');
+      wrap.setAttribute('players', JSON.stringify(players));
+      wrap.setAttribute('rounds', '3');
+      const target = document.getElementById('livesample-gracket');
+      if (target) {
+        target.appendChild(wrap);
+        target.dataset.loaded = '1';
+      }
+    };
+    linkScript.onerror = () => console.warn('gracket webcomponent failed to load');
+    document.head.appendChild(linkScript);
+  } catch (e) { console.warn('gracket error:', e); }
+</script>
 
 </body>
 </html>
