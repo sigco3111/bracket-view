@@ -977,6 +977,7 @@ class BracketView extends HTMLElement {
         min-width: 0;
         align-items: stretch;
         position: relative;
+        z-index: 1;
       }
       .bv-col-trophy {
         display: flex;
@@ -985,17 +986,26 @@ class BracketView extends HTMLElement {
         min-height: 240px;
       }
 
+      /* Single rule — height + width locked to ensure every left/right match
+       * card renders the same size inside any container width. The width
+       * uses 100% so it follows whatever 1fr the grid gives it. The height
+       * is the constant connectors rely on. */
       .bv-card {
         background: var(--bv-card);
         border: 1px solid var(--bv-line);
         border-radius: 10px;
-        padding: 10px 12px;
+        padding: 8px 10px;
         cursor: pointer;
         transition: background .25s, border-color .25s, transform .35s cubic-bezier(.4,0,.2,1), opacity .35s;
         position: relative;
-        /* Fixed height — required for connector overlays to align */
-        height: 84px;
+        /* LOCKED dimensions — width 100% to match the parent column exactly,
+         * height fixed so connector overlays stay aligned vertically. */
+        width: 100%;
         box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        height: 92px;
       }
       .bv-card-preview {
         cursor: default;
@@ -1006,6 +1016,8 @@ class BracketView extends HTMLElement {
         flex-direction: column;
         gap: 4px;
         border-style: solid;
+        width: 100%;
+        box-sizing: border-box;
       }
       .bv-card-preview .bv-slot {
         flex: 1;
@@ -1038,21 +1050,9 @@ class BracketView extends HTMLElement {
         transform: scale(1.02);
       }
       .bv-root.has-focus .bv-card:not(.focus) { opacity: .28; }
-      .bv-card {
-        background: var(--bv-card);
-        border: 1px solid var(--bv-line);
-        border-radius: 10px;
-        padding: 8px 10px;
-        cursor: pointer;
-        transition: background .25s, border-color .25s, transform .35s cubic-bezier(.4,0,.2,1), opacity .35s;
-        position: relative;
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        /* LOCKED height — required for connector overlays to align */
-        height: 92px;
-      }
+      /* .bv-card is defined once at the top of this style block (width:100%;
+       * height:92px; display:flex; column). The duplicate rule that used to
+       * live here was removed — see top of the stylesheet. */
       .bv-card-meta {
         display: flex;
         align-items: center;
