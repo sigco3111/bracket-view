@@ -483,20 +483,49 @@ class BracketView extends HTMLElement {
   }
 
   /**
-   * A compact "next round slots" preview column. We render ghost-like boxes
-   * showing where each next-round match's slots currently sit. A slot is filled
-   * with the propagated team if the corresponding half of the from round is
-   * decided; otherwise it's a thin TBD pipe.
+   * A compact "next round slots" preview column. Each preview card sits
+   * vertically offset by half a "from-pair" so that its centerline aligns
+   * with the gap between two consecutive from matches. This makes the
+   * connector lines mathematically clean: each preview card receives two
+   * convergent connectors (one from each of its two from-pair members).
+   *
+   * Specifically, the column is a CSS grid whose rows alternate spacer /
+   * card / gap so that preview i starts at:
+   *   top = i * 2 * UNIT + (UNIT - GAP) / 2
+   * where UNIT = CARD_H + GAP = 96 + 10 = 106 px.
+   * The first offset is (UNIT - GAP) / 2 = 48 px so preview 0 center sits
+   * at UNIT/2 px from the top, halfway between from 0 and from 1.
    */
   _renderNextPreviewColumn(rounds, fromIdx, toIdx) {
     if (toIdx == null) return '';
     const fromMatches = rounds[fromIdx] || [];
     const toMatches = rounds[toIdx] || [];
     if (toMatches.length === 0) return '';
-    // Each to-match has two slots, each populated by one from-match.
-    // We render a 2-row card per to-match whose top row = first contributing
-    // from-match, bottom row = second contributing from-match.
-    let html = '<div class="bv-col bv-col-next-preview">';
+    const CARD_H = 96;
+    const GAP = 10;
+    const UNIT = CARD_H + GAP;       // 106
+    // preview i (height CARD_H) center should land exactly between
+    // from[2i] and from[2i+1]'s centerlines. from[2i] is at top+i*UNIT,
+    // from[2i+1] is at top+(i*2+1)*UNIT. Their centerlines are at
+    // (i*UNIT + CARD_H/2) and ((i*2+1)*UNIT + CARD_H/2). The midpoint is
+    // (i*2 + 0.5) * UNIT + CARD_H/2 = i*2*UNIT + CARD_H/2 + UNIT/2
+    // = i*2*UNIT + (CARD_H + UNIT) / 2. For preview top, subtract CARD_H/2:
+    //   preview_top(i) = i*2*UNIT + UNIT/2
+    const OFFSET = UNIT / 2;         // 53 px initial offset
+    const STRIDE = 2 * UNIT;        // 212 px between preview starts
+    const TRAILING = UNIT - OFFSET; // 53 px below the last preview
+
+    const rowSizes = [];
+    rowSizes.push(`${OFFSET}px`);   // 53 px initial offset
+    toMatches.forEach((_next, i) => {
+      rowSizes.push(`${CARD_H}px`); // 96 px preview card
+      if (i < toMatches.length - 1) {
+        rowSizes.push(`${STRIDE - CARD_H}px`); // 116 px spacer
+      }
+    });
+    rowSizes.push(`${TRAILING}px`); // 53 px trailing spacer
+
+    let html = `<div class="bv-col bv-col-next-preview" style="display: grid; grid-template-rows: ${rowSizes.join(' ')};">`;
     toMatches.forEach((next, j) => {
       const fromA = fromMatches[j * 2];
       const fromB = fromMatches[j * 2 + 1];
@@ -1073,12 +1102,13 @@ class BracketView extends HTMLElement {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 8px;
+        gap: 6px;
         height: 16px;
         line-height: 16px;
         font-size: 10px;
         color: var(--bv-text-dim);
         overflow: hidden;
+        padding: 0;
       }
       .bv-card-date {
         font-size: 10px;
@@ -1107,9 +1137,9 @@ class BracketView extends HTMLElement {
       .bv-card-teams { display: grid; grid-template-rows: 1fr 1fr; gap: 2px; min-height: 0; overflow: hidden; }
       .bv-team {
         display: grid;
-        grid-template-columns: 22px minmax(0, 1fr) 28px;
+        grid-template-columns: 22px minmax(0, 1fr) 32px;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         cursor: pointer;
         padding: 0 4px;
         border-radius: 6px;
@@ -1307,8 +1337,31 @@ class BracketView extends HTMLElement {
         .bv-team-score { flex: 0 0 26px; font-size: 12px; line-height: 1; }
         .bv-team-from { flex: 0 0 14px; width: 14px; font-size: 10px; }
         .bv-card { padding: 0 8px; height: 96px; grid-template-rows: 16px 1fr; }
-        .bv-card-meta { height: 16px; line-height: 16px; font-size: 9px; }
+        .bv-card-meta { height: 16px; line-height: 16px; font-size: 9px; gap: 4px; }
+        .bv-card-status { font-size: 8px; padding: 2px 4px; }
+        .bv-card-date { font-size: 9px; }
         .bv-card-preview { height: 96px; padding: 0 8px; }
+      }
+      @media (max-width: 640px) {
+        .bv-title { font-size: 14px; }
+        .bv-page { padding: 12px 4px; }
+        /* On narrow screens, hide the preview column and make the
+         * from column use the full container width. The user can switch
+         * pages via the tabs and see the connector preview in the page
+         * header text instead of as a sibling card column. */
+        .bv-col-next-preview { display: none !important; }
+        .bv-columns { grid-template-columns: minmax(0, 1fr) !important; grid-template-areas: 'from' !important; }
+        .bv-connectors { display: none !important; }
+        .bv-team { grid-template-columns: 22px minmax(0, 1fr) 28px; gap: 6px; }
+        .bv-team-name { font-size: 13px; }
+        .bv-team-flag { font-size: 16px; width: 22px; height: 16px; flex: 0 0 22px; }
+        .bv-team-score { flex: 0 0 28px; font-size: 13px; line-height: 1; }
+        .bv-team-from { flex: 0 0 16px; width: 16px; font-size: 11px; }
+        .bv-card { padding: 0 10px; height: 96px; grid-template-rows: 16px 1fr; }
+        .bv-card-meta { height: 16px; line-height: 16px; font-size: 10px; gap: 6px; }
+        .bv-card-status { font-size: 9px; padding: 2px 6px; }
+        .bv-card-date { font-size: 10px; }
+        .bv-card-preview { height: 96px; padding: 0 10px; }
       }
       @media (prefers-reduced-motion: reduce) {
         .bv-card, .bv-team, .connector, .bv-tab { transition: none !important; }
