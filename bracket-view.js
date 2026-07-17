@@ -541,9 +541,18 @@ class BracketView extends HTMLElement {
 
   _renderPreviewSlot(team, fromMatch, side, fromIndex) {
     const isFilled = !!(team && !team.isTbd && !team.isBye);
-    return `<div class="bv-slot ${isFilled ? 'filled' : 'empty'}" data-side="${side}" data-from-idx="${fromIndex}">
-      <span class="bv-slot-label">${isFilled ? `${this._esc(team.displayName || team.name)}` : '다음 매치 승자'}</span>
-    </div>`;
+    const flag = isFilled ? (team.flag || '') : '';
+    const name = isFilled ? (team.displayName || team.name || '') : '';
+    // If a score has been propagated (fromMatch?.scores?.[side]), show it;
+    // otherwise show a small '·' placeholder to keep the column width
+    // aligned with the from-column cards.
+    const propagatedScore = fromMatch && fromMatch.scores && fromMatch.scores[side];
+    const scoreText = (typeof propagatedScore === 'number') ? String(propagatedScore) : '·';
+    const arrow = (fromIndex > 0) ? '◀' : '';
+    const labelHtml = isFilled
+      ? `<span class="bv-slot-flag">${this._esc(flag)}</span><span class="bv-slot-name">${this._esc(name)}</span><span class="bv-slot-score">${this._esc(scoreText)}</span>${arrow ? `<span class="bv-slot-arrow">${arrow}</span>` : ''}`
+      : `<span class="bv-slot-arrow">?</span><span class="bv-slot-name">다음 매치 승자</span><span class="bv-slot-score"></span>`;
+    return `<div class="bv-slot ${isFilled ? 'filled' : 'empty'}" data-side="${side}" data-from-idx="${fromIndex}">${labelHtml}</div>`;
   }
 
   _renderTrophyColumn(finalMatch) {
@@ -1067,26 +1076,69 @@ class BracketView extends HTMLElement {
       .bv-card-preview .bv-slot {
         flex: 1;
         display: grid;
-        grid-template-columns: 24px minmax(0, 1fr) 28px;
+        grid-template-columns: 22px minmax(0, 1fr) 22px 14px;
         align-items: center;
         gap: 6px;
-        padding: 2px 4px;
+        padding: 2px 6px;
         border-radius: 6px;
         font-size: 12px;
         font-weight: 500;
-        background: rgba(255,255,255,.02);
+        background: rgba(255,255,255,.04);
         color: var(--bv-text-dim);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        height: 28px;
+        height: 38px;
         box-sizing: border-box;
         min-width: 0;
+        margin: 1px 0;
+        position: relative;
       }
       .bv-card-preview .bv-slot.filled {
-        background: rgba(79,158,255,.08);
+        background: rgba(79,158,255,.10);
         color: var(--bv-accent);
         border-left: 3px solid var(--bv-accent);
+      }
+      .bv-card-preview .bv-slot.empty {
+        color: var(--bv-text-dim);
+        border: 1px dashed rgba(255,255,255,.18);
+        background: transparent;
+      }
+      .bv-slot-flag {
+        font-size: 14px;
+        line-height: 1;
+        width: 22px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 22px;
+        overflow: hidden;
+      }
+      .bv-slot-name {
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+        line-height: 1.2;
+      }
+      .bv-slot-score {
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        font-weight: 600;
+        font-size: 12px;
+        flex: 0 0 22px;
+        line-height: 1;
+        opacity: 0.85;
+      }
+      .bv-slot-arrow {
+        color: var(--bv-accent);
+        font-size: 11px;
+        text-align: center;
+        flex: 0 0 14px;
+        width: 14px;
       }
       .bv-card:hover { background: var(--bv-card-hover); border-color: rgba(79,158,255,.4); }
       .bv-card.focus {
@@ -1344,24 +1396,24 @@ class BracketView extends HTMLElement {
       }
       @media (max-width: 640px) {
         .bv-title { font-size: 14px; }
-        .bv-page { padding: 12px 4px; }
-        /* On narrow screens, hide the preview column and make the
-         * from column use the full container width. The user can switch
-         * pages via the tabs and see the connector preview in the page
-         * header text instead of as a sibling card column. */
-        .bv-col-next-preview { display: none !important; }
-        .bv-columns { grid-template-columns: minmax(0, 1fr) !important; grid-template-areas: 'from' !important; }
-        .bv-connectors { display: none !important; }
-        .bv-team { grid-template-columns: 22px minmax(0, 1fr) 28px; gap: 6px; }
-        .bv-team-name { font-size: 13px; }
-        .bv-team-flag { font-size: 16px; width: 22px; height: 16px; flex: 0 0 22px; }
-        .bv-team-score { flex: 0 0 28px; font-size: 13px; line-height: 1; }
-        .bv-team-from { flex: 0 0 16px; width: 16px; font-size: 11px; }
-        .bv-card { padding: 0 10px; height: 96px; grid-template-rows: 16px 1fr; }
-        .bv-card-meta { height: 16px; line-height: 16px; font-size: 10px; gap: 6px; }
-        .bv-card-status { font-size: 9px; padding: 2px 6px; }
+        .bv-page { padding: 12px 6px; }
+        /* On narrow screens the columns shrink so we tighten spacing and
+         * font sizes. The preview column is preserved (and stays aligned
+         * to the bracket line via the staggered grid-template-rows math
+         * applied by _renderNextPreviewColumn). */
+        .bv-team { grid-template-columns: 20px minmax(0, 1fr) 26px; gap: 4px; }
+        .bv-team-name { font-size: 12px; }
+        .bv-team-flag { font-size: 14px; width: 20px; height: 14px; flex: 0 0 20px; }
+        .bv-team-score { flex: 0 0 26px; font-size: 12px; line-height: 1; }
+        .bv-team-from { flex: 0 0 14px; width: 14px; font-size: 10px; }
+        .bv-card { padding: 0 8px; height: 96px; grid-template-rows: 16px 1fr; }
+        .bv-card-meta { height: 16px; line-height: 16px; font-size: 10px; gap: 4px; }
+        .bv-card-status { font-size: 8px; padding: 2px 5px; }
         .bv-card-date { font-size: 10px; }
-        .bv-card-preview { height: 96px; padding: 0 10px; }
+        .bv-card-preview { height: 96px; padding: 0 8px; grid-template-rows: 1fr 1fr; }
+        .bv-slot { gap: 4px !important; padding: 1px 2px !important; }
+        .bv-slot-flag { font-size: 12px !important; }
+        .bv-slot-name { font-size: 11px !important; }
       }
       @media (prefers-reduced-motion: reduce) {
         .bv-card, .bv-team, .connector, .bv-tab { transition: none !important; }
