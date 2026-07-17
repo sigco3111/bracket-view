@@ -355,34 +355,33 @@ class BracketView extends HTMLElement {
    *   - The SVG overlay sits absolutely inside .bv-columns with width=100% and
    *     a viewBox matched to the container's measured size after layout.
    *
-   * Because we can't know pixel positions before the browser lays them out,
-   * the SVG uses a 0..1 normalized viewBox and we set preserveAspectRatio=none
-   * plus 100% width/height. The y of "from" match i is:
-   *   y_from_i = (i + 0.5) * (CARD_H + GAP)  — centerline of card i,
-   *   then we need to subtract the column start offset if any. We default the
-   *   column to start at y=0 and use flex `align-items: start` to keep cards
-   *   anchored at the top of the column.
-   */
-  _renderConnectors(rounds, fromIdx, toIdx) {
-    const fromMatches = rounds[fromIdx] || [];
-    const toMatches = rounds[toIdx] || [];
-    if (fromMatches.length === 0 || toMatches.length === 0) return '';
-    // Card metrics must match the CSS numbers below exactly.
-    const CARD_H = 92;
-    const GAP = 10;
-    const UNIT = CARD_H + GAP;
-    const fromCount = fromMatches.length;
-    const toCount = toMatches.length;
-    // Vertical pixel offsets of each card's center within the column.
-    // Card 0 centerline: UNIT / 2 (since unit = card + gap, and card height is
-    // UNIT - GAP).
-    const fromY = (i) => Math.round(i * UNIT + UNIT / 2);
-    const toY = (j) => Math.round((j + 0.5) * UNIT * (fromCount / toCount));
+   /**
+    * Build the SVG overlay of connector lines between the "from" column and the
+    * "to" column on the same paper-fold page. Each pair of consecutive "from"
+    * matches converges to a single "to" match.
+    *
+    * Card metrics must match the .bv-card CSS rule exactly. CARD_H = 96px.
+    * (16 meta + 28 row + 28 row + 8 gap + 16 padding).
+    * SVG uses a 0..1 normalized viewBox with preserveAspectRatio=none so the
+    * lines stretch with the column width.
+    */
+   _renderConnectors(rounds, fromIdx, toIdx) {
+     const fromMatches = rounds[fromIdx] || [];
+     const toMatches = rounds[toIdx] || [];
+     if (fromMatches.length === 0 || toMatches.length === 0) return '';
+     // LOCKED card metrics — must match .bv-card CSS rule below.
+     const CARD_H = 96;
+     const GAP = 10;
+     const UNIT = CARD_H + GAP;
+     const fromCount = fromMatches.length;
+     const toCount = toMatches.length;
+     const totalH = fromCount * UNIT;
+     const fromY = (i) => Math.round(i * UNIT + UNIT / 2);
+     const toY = (j) => Math.round((j + 0.5) * UNIT * (fromCount / toCount));
 
     // Use a concrete width matching the .bv-columns gap (12px). The wrapper
     // is positioned absolutely inside .bv-columns between the two columns,
     // so its left/right naturally align with the column borders.
-    const totalH = fromCount * UNIT;
 
     let paths = '';
     for (let i = 0; i < fromCount; i++) {
@@ -986,38 +985,36 @@ class BracketView extends HTMLElement {
         min-height: 240px;
       }
 
-      /* Single rule — height + width locked to ensure every left/right match
-       * card renders the same size inside any container width. The width
-       * uses 100% so it follows whatever 1fr the grid gives it. The height
-       * is the constant connectors rely on. */
+      /* Single rule — width and height locked so every left/right match card
+       * renders identical inside any container. CARD_H = 96 = 8 padding-top
+       * + 16 meta + 4 gap + 28 row + 28 row + 4 gap-to-padding + 8 padding-bottom.
+       * The two team rows are an exact 1fr/1fr split. */
       .bv-card {
         background: var(--bv-card);
         border: 1px solid var(--bv-line);
         border-radius: 10px;
-        padding: 8px 10px;
+        padding: 0 10px;
         cursor: pointer;
         transition: background .25s, border-color .25s, transform .35s cubic-bezier(.4,0,.2,1), opacity .35s;
         position: relative;
-        /* LOCKED dimensions — width 100% to match the parent column exactly,
-         * height fixed so connector overlays stay aligned vertically. */
         width: 100%;
+        height: 96px;
         box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        height: 92px;
+        display: grid;
+        grid-template-rows: 18px 1fr;
+        gap: 0;
       }
       .bv-card-preview {
         cursor: default;
         opacity: .85;
-        height: 92px;
-        padding: 8px 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        border-style: solid;
+        height: 96px;
+        padding: 0 10px;
         width: 100%;
         box-sizing: border-box;
+        display: grid;
+        grid-template-rows: 1fr 1fr;
+        gap: 2px;
+        border-style: solid;
       }
       .bv-card-preview .bv-slot {
         flex: 1;
@@ -1088,7 +1085,7 @@ class BracketView extends HTMLElement {
       .status-live { background: rgba(239,68,68,.18); color: var(--bv-danger); }
       .status-scheduled { background: rgba(255,255,255,.06); color: var(--bv-text-dim); }
 
-      .bv-card-teams { display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; min-height: 0; }
+      .bv-card-teams { display: grid; grid-template-rows: 1fr 1fr; gap: 2px; min-height: 0; }
       .bv-team {
         display: grid;
         grid-template-columns: 24px minmax(0, 1fr) 28px 16px;
@@ -1099,7 +1096,8 @@ class BracketView extends HTMLElement {
         border-radius: 6px;
         transition: background .2s;
         min-width: 0;
-        height: 28px;
+        min-height: 0;
+        height: 100%;
         box-sizing: border-box;
       }
       .bv-team:hover { background: rgba(79,158,255,.08); }
@@ -1284,8 +1282,9 @@ class BracketView extends HTMLElement {
         .bv-team-flag { font-size: 16px; flex: 0 0 22px; width: 22px; }
         .bv-team-score { flex: 0 0 26px; font-size: 12px; }
         .bv-team-from { flex: 0 0 14px; width: 14px; font-size: 10px; }
-        .bv-card { padding: 6px 8px; height: 84px; }
-        .bv-card-meta { height: 14px; line-height: 14px; font-size: 9px; }
+        .bv-card { padding: 0 8px; height: 96px; grid-template-rows: 16px 1fr; }
+        .bv-card-meta { height: 16px; line-height: 16px; font-size: 9px; }
+        .bv-card-preview { height: 96px; padding: 0 8px; }
       }
       @media (prefers-reduced-motion: reduce) {
         .bv-card, .bv-team, .connector, .bv-tab { transition: none !important; }
