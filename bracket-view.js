@@ -515,6 +515,17 @@ class BracketView extends HTMLElement {
     const STRIDE = 2 * UNIT;        // 212 px between preview starts
     const TRAILING = UNIT - OFFSET; // 53 px below the last preview
 
+    // Row layout:
+    //   row 0: 53 px spacer (preview 0 top = 53)
+    //   row 1: 96 px preview 0  (top = 53)
+    //   row 2: 116 px spacer  (between preview 0 bottom and preview 1 top)
+    //   row 3: 96 px preview 1  (top = 53 + 96 + 116 = 265)
+    //   row 4: 53 px trailing
+    // Each preview card sits on a SINGLE explicit row (the spacer rows are
+    // auto-flowed with empty space). We assign each card an explicit
+    // `grid-row` matching its index multiplied by 2 (so card 0 -> row 1,
+    // card 1 -> row 3, card 2 -> row 5, etc.) — exactly matching our
+    // interleaved template.
     const rowSizes = [];
     rowSizes.push(`${OFFSET}px`);   // 53 px initial offset
     toMatches.forEach((_next, i) => {
@@ -531,7 +542,15 @@ class BracketView extends HTMLElement {
       const fromB = fromMatches[j * 2 + 1];
       const slotA = this._renderPreviewSlot(next.a, fromA, 'a', j * 2);
       const slotB = this._renderPreviewSlot(next.b, fromB, 'b', j * 2 + 1);
-      html += `<article class="bv-card bv-card-preview" data-from-match="${fromA?.id || ''}" data-to-match="${next.id}">
+      // Explicit grid-row AND grid-column together; without grid-column the
+      // card could auto-flow into the tray on the left of the grid.  We pin
+      // it to column 1 row (j*2+1) which exactly matches the interleaved
+      // template (spacer | card | spacer | card | ...).
+      // CSS Grid rows are 1-indexed. row 1 is the 53px initial spacer,
+      // row 2 is preview 0, row 3 is the 116px spacer, row 4 is preview 1,
+      // etc. The formula matches the interleaved template.
+      const cardRow = j * 2 + 2;
+      html += `<article class="bv-card bv-card-preview" style="grid-row: ${cardRow}; grid-column: 1;" data-from-match="${fromA?.id || ''}" data-to-match="${next.id}">
         ${slotA}${slotB}
       </article>`;
     });
@@ -1071,7 +1090,8 @@ class BracketView extends HTMLElement {
         display: grid;
         grid-template-rows: 1fr 1fr;
         gap: 2px;
-        border-style: solid;
+        align-self: start;
+        justify-self: stretch;
       }
       .bv-card-preview .bv-slot {
         flex: 1;
