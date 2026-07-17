@@ -237,12 +237,23 @@ class BracketView extends HTMLElement {
   }
 
   _roundLabel(roundIdx, totalRounds) {
-    // Korean tournament terms for the standard 5-round case
-    if (totalRounds === 5) return ROUND_NAMES_5[roundIdx] || `${roundIdx}`;
-    // Generic fallback (English-style)
-    const labels = ['Final', 'Semifinals', 'Quarterfinals', 'Round of 16', 'Round of 32', 'Round of 64'];
-    const offset = 5 - totalRounds;
-    return labels[offset + roundIdx] || `Round ${roundIdx + 1}`;
+    // Korean tournament terms — roundIdx 0 is the FIRST round (largest bracket).
+    // 2 rounds (2 teams):   0=결승
+    // 3 rounds (4 teams):   0=4강, 1=결승
+    // 4 rounds (8 teams):   0=8강, 1=4강, 2=결승
+    // 5 rounds (16 teams):  0=16강, 1=8강, 2=4강, 3=결승  (matches ROUND_NAMES_5)
+    // 6 rounds (32 teams):  0=32강, 1=16강, 2=8강, 3=4강, 4=결승
+    const KO_LABELS = ['결승', '4강', '8강', '16강', '32강', '64강'];
+    if (totalRounds >= 2 && totalRounds <= KO_LABELS.length) {
+      const startIdx = KO_LABELS.length - (totalRounds - 1); // first round's label index
+      const idx = startIdx - roundIdx;
+      if (KO_LABELS[idx]) return KO_LABELS[idx];
+    }
+    // Edge case (rounds < 2 or > 6): fall back to English.
+    const ENGLISH_LABELS = ['Final', 'Semifinals', 'Quarterfinals', 'Round of 16', 'Round of 32', 'Round of 64'];
+    const startIdx = ENGLISH_LABELS.length - (totalRounds - 1);
+    const idx = startIdx - roundIdx;
+    return ENGLISH_LABELS[idx] || `Round ${roundIdx + 1}`;
   }
 
   // ── Render: paper-fold mode ────────────────────────────────────────────────
@@ -274,9 +285,16 @@ class BracketView extends HTMLElement {
           <span class="bv-page-title">${this._esc(this._roundLabel(p.round, rounds.length))}</span>`;
       if (p.nextRound !== null && !p.isFinal) {
         const nextLabel = this._roundLabel(p.nextRound, rounds.length);
-        html += `<span class="bv-page-sub">승자는 ${this._esc(nextLabel)}로</span>`;
+        // 자연스러운 한국어 조사: 받침 있으면 "으로", 없으면 "로".
+        // 라운드명 끝 글자의 종성 유무로 판단.
+        const lastChar = nextLabel.charCodeAt(nextLabel.length - 1);
+        const hasJongSung = lastChar >= 0xAC00 && lastChar <= 0xD7A3 && (lastChar - 0xAC00) % 28 > 0;
+        const josa = hasJongSung ? '으로' : '로';
+        html += `<span class="bv-page-sub">승자는 ${this._esc(nextLabel)}${josa} 진출</span>`;
       } else if (p.isFinal) {
         html += `<span class="bv-page-sub">우승자 결정</span>`;
+      } else {
+        html += `<span class="bv-page-sub">라운드 결승</span>`;
       }
       html += `</div><div class="bv-columns single-round">`;
       // Single round column on the left
@@ -317,11 +335,11 @@ class BracketView extends HTMLElement {
 
     // Footer toolbar
     html += `<footer class="bv-toolbar">
-      <button class="bv-btn bv-btn-reset" type="button">↺ Reset</button>
-      <button class="bv-btn bv-btn-random" type="button">⚄ Random</button>
-      <button class="bv-btn bv-btn-clear" type="button" ${isFocusing ? '' : 'disabled'}>✕ Clear focus</button>
+      <button class="bv-btn bv-btn-reset" type="button">↺ 초기화</button>
+      <button class="bv-btn bv-btn-random" type="button">⚄ 랜덤</button>
+      <button class="bv-btn bv-btn-clear" type="button" ${isFocusing ? '' : 'disabled'}>✕ 포커스 해제</button>
       <span class="bv-spacer"></span>
-      <button class="bv-btn bv-btn-layout" type="button" title="Toggle layout">${this._layout === 'paper-fold' ? '⤢ Flat' : '⤡ Fold'}</button>
+      <button class="bv-btn bv-btn-layout" type="button" title="레이아웃 전환">${this._layout === 'paper-fold' ? '⤢ 펼치기' : '⤡ 접기'}</button>
     </footer>`;
 
     html += `</div>`;
@@ -420,12 +438,13 @@ class BracketView extends HTMLElement {
     const decided = !!match.winner;
     const status = match.status || (decided ? 'fulltime' : 'scheduled');
 
-    // Date / status badge
+    // Date / status badge (Korean defaults)
     const dateLabel = match.date || '';
     let statusLabel = '';
     if (status === 'scheduled') statusLabel = match.kickoff || '예정';
     else if (status === 'live') statusLabel = '진행 중';
-    else if (status === 'fulltime') statusLabel = '풀타임';
+    else if (status === 'fulltime' || status === 'completed') statusLabel = '풀타임';
+    else if (status === 'postponed') statusLabel = '연기';
 
     const classes = ['bv-card'];
     if (isFocused) classes.push('focus');
@@ -607,11 +626,11 @@ class BracketView extends HTMLElement {
         ${title ? `<header class="bv-header"><h2 class="bv-title">${this._esc(title)}</h2></header>` : ''}
         <div class="bv-stage">${svg}</div>
         <footer class="bv-toolbar">
-          <button class="bv-btn bv-btn-reset" type="button">↺ Reset</button>
-          <button class="bv-btn bv-btn-random" type="button">⚄ Random</button>
-          <button class="bv-btn bv-btn-clear" type="button" ${isFocusing ? '' : 'disabled'}>✕ Clear focus</button>
+          <button class="bv-btn bv-btn-reset" type="button">↺ 초기화</button>
+          <button class="bv-btn bv-btn-random" type="button">⚄ 랜덤</button>
+          <button class="bv-btn bv-btn-clear" type="button" ${isFocusing ? '' : 'disabled'}>✕ 포커스 해제</button>
           <span class="bv-spacer"></span>
-          <button class="bv-btn bv-btn-layout" type="button">${this._layout === 'paper-fold' ? '⤢ Flat' : '⤡ Fold'}</button>
+          <button class="bv-btn bv-btn-layout" type="button" title="레이아웃 전환">${this._layout === 'paper-fold' ? '⤢ 펼치기' : '⤡ 접기'}</button>
         </footer>
       </div>`;
     this._attachEvents();
@@ -629,7 +648,7 @@ class BracketView extends HTMLElement {
   }
 
   _renderEmpty() {
-    this.shadowRoot.innerHTML = `<style>${this._css()}</style><div class="bv-root empty">No teams loaded.</div>`;
+    this.shadowRoot.innerHTML = `<style>${this._css()}</style><div class="bv-root empty">팀이 없습니다.</div>`;
   }
 
   _render() {
@@ -1085,31 +1104,34 @@ class BracketView extends HTMLElement {
       .status-live { background: rgba(239,68,68,.18); color: var(--bv-danger); }
       .status-scheduled { background: rgba(255,255,255,.06); color: var(--bv-text-dim); }
 
-      .bv-card-teams { display: grid; grid-template-rows: 1fr 1fr; gap: 2px; min-height: 0; }
+      .bv-card-teams { display: grid; grid-template-rows: 1fr 1fr; gap: 2px; min-height: 0; overflow: hidden; }
       .bv-team {
         display: grid;
-        grid-template-columns: 24px minmax(0, 1fr) 28px 16px;
+        grid-template-columns: 22px minmax(0, 1fr) 28px;
         align-items: center;
         gap: 6px;
         cursor: pointer;
-        padding: 2px 4px;
+        padding: 0 4px;
         border-radius: 6px;
         transition: background .2s;
         min-width: 0;
         min-height: 0;
         height: 100%;
+        max-height: 100%;
+        overflow: hidden;
         box-sizing: border-box;
       }
       .bv-team:hover { background: rgba(79,158,255,.08); }
       .bv-team-flag {
-        font-size: 18px;
+        font-size: 16px;
         line-height: 1;
         width: 24px;
-        height: 18px;
+        height: 16px;
         display: flex;
         align-items: center;
         justify-content: center;
         flex: 0 0 24px;
+        overflow: hidden;
       }
       .bv-team-name {
         font-size: 13px;
@@ -1118,6 +1140,7 @@ class BracketView extends HTMLElement {
         overflow: hidden;
         text-overflow: ellipsis;
         min-width: 0;
+        line-height: 1.2;
       }
       .bv-team-score {
         font-variant-numeric: tabular-nums;
@@ -1126,6 +1149,7 @@ class BracketView extends HTMLElement {
         font-size: 13px;
         color: var(--bv-text);
         flex: 0 0 28px;
+        line-height: 1;
       }
       .bv-team-from {
         color: var(--bv-accent);
@@ -1277,10 +1301,10 @@ class BracketView extends HTMLElement {
         .bv-title { font-size: 14px; }
         .bv-page { padding: 12px 4px; }
         .bv-columns { gap: 10px; }
-        .bv-team { grid-template-columns: 22px minmax(0, 1fr) 26px 14px; gap: 4px; }
+        .bv-team { grid-template-columns: 20px minmax(0, 1fr) 24px; gap: 4px; }
         .bv-team-name { font-size: 12px; }
-        .bv-team-flag { font-size: 16px; flex: 0 0 22px; width: 22px; }
-        .bv-team-score { flex: 0 0 26px; font-size: 12px; }
+        .bv-team-flag { font-size: 14px; width: 22px; height: 14px; flex: 0 0 22px; }
+        .bv-team-score { flex: 0 0 26px; font-size: 12px; line-height: 1; }
         .bv-team-from { flex: 0 0 14px; width: 14px; font-size: 10px; }
         .bv-card { padding: 0 8px; height: 96px; grid-template-rows: 16px 1fr; }
         .bv-card-meta { height: 16px; line-height: 16px; font-size: 9px; }

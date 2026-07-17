@@ -342,30 +342,55 @@ document.querySelectorAll('[data-sample]').forEach(el =&gt; {
         ? window.SAMPLE_DATA.participants.map(p => p.name)
         : ['Brazil','Croatia','Argentina','Netherlands','France','Poland','England','Senegal']);
 
+      // 8-world-cup flag emoji dictionary so the cards show a flag glyph,
+      // matching what Google search renders for each team.
+      const FLAG = {
+        Brazil: '🇧🇷',
+        Croatia: '🇭🇷',
+        Argentina: '🇦🇷',
+        Netherlands: '🇳🇱',
+        France: '🇫🇷',
+        Poland: '🇵🇱',
+        England: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+        Senegal: '🇸🇳',
+      };
+      const flagOf = (n) => FLAG[n] || '';
+
       const pairs = [[0,1],[2,3],[4,5],[6,7]];
       const winnerOfIdx = (i) => ([0,1,1,1])[i] || 1;
 
       const r1Matches = pairs.map(([a,b], i) => ({
-        a: { name: NAMES[a], score: winnerOfIdx(i), flag: '' },
-        b: { name: NAMES[b], score: 1 - winnerOfIdx(i), flag: '' },
+        a: { name: NAMES[a], displayName: NAMES[a], flag: flagOf(NAMES[a]) },
+        b: { name: NAMES[b], displayName: NAMES[b], flag: flagOf(NAMES[b]) },
+        scores: { a: winnerOfIdx(i), b: 1 - winnerOfIdx(i) },
         winner: winnerOfIdx(i) === 0 ? 'a' : 'b',
         status: 'completed',
-        date: '',
+        date: '7.11 (금) 오전 4:00',
       }));
 
       const data = {
-        participants: NAMES.map((name, i) => ({ id: 'p' + (i+1), name })),
+        participants: NAMES.map((name, i) => ({ id: 'p' + (i+1), name, flag: flagOf(name) })),
         rounds: [
           [...r1Matches],
           [
-            { a: { name: NAMES[0], score: 3 }, b: { name: NAMES[3], score: 2 }, winner: 'a', status: 'completed', date: '' },
-            { a: { name: NAMES[5], score: 2 }, b: { name: NAMES[7], score: 1 }, winner: 'a', status: 'completed', date: '' },
+            { a: { name: NAMES[0], displayName: NAMES[0], flag: flagOf(NAMES[0]) },
+              b: { name: NAMES[3], displayName: NAMES[3], flag: flagOf(NAMES[3]) },
+              scores: { a: 3, b: 2 },
+              winner: 'a', status: 'completed', date: '7.15 (화) 오전 4:00' },
+            { a: { name: NAMES[5], displayName: NAMES[5], flag: flagOf(NAMES[5]) },
+              b: { name: NAMES[7], displayName: NAMES[7], flag: flagOf(NAMES[7]) },
+              scores: { a: 2, b: 1 },
+              winner: 'a', status: 'completed', date: '7.16 (수) 오전 4:00' },
           ],
           [
-            { a: { name: NAMES[0] },            b: { name: NAMES[5] }, status: 'scheduled', date: '' },
+            { a: { name: NAMES[0], displayName: NAMES[0], flag: flagOf(NAMES[0]) },
+              b: { name: NAMES[5], displayName: NAMES[5], flag: flagOf(NAMES[5]) },
+              status: 'scheduled', date: '7.19 (토) 오전 4:00' },
           ],
           [
-            { a: null,                          b: { name: NAMES[5] }, status: 'scheduled', date: '' },
+            { a: null,
+              b: { name: NAMES[5], displayName: NAMES[5], flag: flagOf(NAMES[5]) },
+              status: 'scheduled', date: 'TBD' },
           ],
         ],
       };
@@ -373,7 +398,6 @@ document.querySelectorAll('[data-sample]').forEach(el =&gt; {
         root.setData(data);
         mount.dataset.loaded = '1';
       } else {
-        // wait for it
         setTimeout(() => { try { root.setData?.(data); mount.dataset.loaded = '1'; } catch(_){} }, 300);
       }
     }
