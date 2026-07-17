@@ -1,13 +1,16 @@
 # bracket-view
 
-> 자체 완결형, 의존성 없는 `<bracket-view>` 웹 컴포넌트 — 단일 토너먼트 시각화.
-> Google Search 토너먼트 카드의 paper-fold UX에서 착안.
+> **[라이브 데모 →](https://sigco3111.github.io/bracket-view/)**
+> 자기 완결형, 의존성 0, 빌드 0 — 단일 ES 모듈 한 줄 (`<script type="module">`) 로 동작하는 단일-토너먼트 시각화 웹 컴포넌트. Google Search 토너먼트 카드의 paper-fold UX에서 착안.
 
-[![라이브 데모](https://img.shields.io/badge/%EB%9D%BC%EC%9D%B4%EB%B8%8C%20%EB%8D%B0%EB%AA%A8-sigco3111.github.io%2Fbracket--view-blue?logo=githubpages&logoColor=white)](https://sigco3111.github.io/bracket-view/)
-[![MIT](https://img.shields.io/badge/%EC%9D%B5%EC%8A%A4%ED%8B%B0%ED%82%A4%EC%A6%9D-MIT-green.svg)](LICENSE)
-[![의존성 0](https://img.shields.io/badge/%EC%9D%98%EC%A1%B4%EC%84%B1-0-yellow.svg)]()
-[![ESM](https://img.shields.io/badge/script%20type-module-blueviolet.svg)]()
-[![~46KB](https://img.shields.io/badge/%ED%81%AC%EA%B8%B0-~46KB-orange.svg)]()
+![라이브 데모](https://img.shields.io/badge/%EB%9D%BC%EC%9D%B4%EB%B8%8C%20%EB%8D%B0%EB%AA%A8-sigco3111.github.io%2Fbracket--view-blue?style=for-the-badge&logo=githubpages&logoColor=white&labelColor=007ec6)
+[![MIT](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
+[![의존성 0](https://img.shields.io/badge/dependencies-0-yellow.svg?style=flat-square)]()
+[![ESM](https://img.shields.io/badge/script%20type-module-blueviolet.svg?style=flat-square)]()
+[![크기 ~46KB](https://img.shields.io/badge/size-~46KB-orange.svg?style=flat-square)]()
+![8 팀 데모](https://img.shields.io/badge/teams-2%E2%80%938%E2%80%93%2032-blue.svg?style=flat-square)
+
+🇰🇷 **한국어 디폴트** | **[🇺🇸 English](./README_en.md)**
 
 ---
 
