@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n-ko="토너먼트 브래킷 라이브러리 — 라이브 샘플" data-i18n-en="Tournament Bracket Libraries — Live Samples">Tournament Bracket Libraries — Live Samples</title>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --card: #141821;
+    --card-hover: #1a1f2b;
+    --line: #2a2f3a;
+    --text: #e6e9ef;
+    --text-dim: #8a90a0;
+    --accent: #4f9eff;
+    --accent-2: #22c55e;
+    --warning: #f59e0b;
+    --winner: #22c55e;
+    --loser: #94a3b8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    padding: 56px 24px 40px;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(79,158,255,.08), transparent);
+    border-bottom: 1px solid var(--line);
+  }
+  header h1 { margin: 0 0 12px; font-size: 32px; font-weight: 700; letter-spacing: -.02em; }
+  header p { margin: 0 auto; max-width: 720px; color: var(--text-dim); font-size: 15px; }
+  .badges { margin-top: 18px; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .badge { background: var(--card); color: var(--text-dim); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 600; }
+  main { max-width: 1200px; margin: 0 auto; padding: 32px 24px 80px; }
+  h2 { margin: 40px 0 16px; font-size: 22px; font-weight: 700; color: var(--text); border-left: 4px solid var(--accent); padding-left: 12px; }
+  .intro { color: var(--text-dim); margin: 0 0 32px; }
+  .note { background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.3); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--text-dim); margin-bottom: 24px; }
+  .note b { color: var(--warning); }
+
+  .lib-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; margin-bottom: 32px; }
+  .lib-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transition: transform .2s, border-color .2s; }
+  .lib-card:hover { transform: translateY(-2px); border-color: rgba(79,158,255,.5); }
+  .lib-meta { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .lib-meta h3 { margin: 0 0 6px; font-size: 17px; font-weight: 700; }
+  .lib-meta p { margin: 0 0 10px; font-size: 13px; color: var(--text-dim); }
+  .lib-meta .stats { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--text-dim); }
+  .lib-meta .stats b { color: var(--text); }
+  .lib-meta .stats a { color: var(--accent); text-decoration: none; }
+  .lib-meta .stats a:hover { text-decoration: underline; }
+  .status-badge.live { display: inline-block; background: rgba(34,197,94,.15); color: var(--accent-2); border: 1px solid rgba(34,197,94,.4); border-radius: 999px; padding: 2px 8px; font-size: 10px; font-weight: 700; margin-left: 8px; vertical-align: middle; letter-spacing: .04em; }
+  .status-badge.ours { display: inline-block; background: rgba(79,158,255,.15); color: var(--accent); border: 1px solid rgba(79,158,255,.4); border-radius: 999px; padding: 2px 8px; font-size: 10px; font-weight: 700; margin-left: 8px; vertical-align: middle; letter-spacing: .04em; }
+  .lib-frame { padding: 16px; background: #fafafc; min-height: 360px; color: #1a1d23; overflow: auto; }
+  .lib-frame.tall { min-height: 460px; }
+  .lib-frame.dark { background: #ffffff; color: #1a1d23; }
+  .lib-frame h4 { margin: 0 0 12px; font-size: 12px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .lib-status { display: flex; align-items: center; justify-content: center; min-height: 280px; padding: 20px; }
+  .lib-status-msg { max-width: 320px; text-align: center; }
+  .lib-status-tag { background: rgba(245,158,11,.15); color: #92580b; border: 1px solid rgba(245,158,11,.35); border-radius: 999px; padding: 4px 12px; display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 12px; }
+  .lib-status-msg p { font-size: 13px; color: #555; line-height: 1.5; margin: 8px 0; }
+  .lib-status-msg code { background: #f1f3f6; padding: 1px 5px; border-radius: 3px; font-size: 11px; color: #1a1d23; }
+  .lib-status-link a { color: var(--accent); text-decoration: none; font-weight: 600; font-size: 13px; }
+  .lib-status-link a:hover { text-decoration: underline; }
+
+  /* ---- 1. brackets-viewer.js style ---- */
+  .bv-root { font-family: system-ui, sans-serif; }
+  .bv-round { display: flex; flex-direction: column; gap: 10px; min-width: 130px; }
+  .bv-round + .bv-round { margin-left: 60px; }
+  .bv-root { display: flex; }
+  .bv-root h4 { font-size: 11px; color: #888; text-transform: uppercase; margin: 0 0 6px; letter-spacing: .04em; }
+  .bv-card { background: #fff; border: 1px solid #e1e4e8; border-radius: 6px; padding: 10px 12px; }
+  .bv-team { padding: 4px 0; font-size: 13px; color: #333; }
+  .bv-team.winner { color: var(--winner); font-weight: 700; }
+
+  /* ---- 2. Vue style ---- */
+  .vue-root { display: flex; gap: 50px; align-items: flex-start; font-family: system-ui, sans-serif; }
+  .vue-round { min-width: 130px; }
+  .vue-round-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+  .vue-card { background: #fff; border: 1px solid #e1e4e8; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; }
+  .vue-side { padding: 3px 0; font-size: 13px; color: #333; }
+  .vue-side:first-child { border-bottom: 1px solid #e1e4e8; padding-bottom: 6px; margin-bottom: 6px; }
+
+  /* ---- 3. jquery-bracket style ---- */
+  .jq-root { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .jq-stage-label { background: #2c7a39; color: #fff; padding: 8px 16px; border-radius: 6px; font-weight: 700; display: inline-block; margin-bottom: 12px; font-size: 13px; }
+  .jq-teams { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-bottom: 16px; }
+  .jq-team { background: #fff; border: 1px dashed #c0c4cc; padding: 6px 8px; border-radius: 4px; font-size: 11px; color: #999; }
+  .jq-team:nth-child(-n+4) { border-color: #c0c4cc; }
+  .jq-team .jq-name { color: #555; }
+  .jq-grid { display: flex; gap: 32px; align-items: flex-start; }
+  .jq-col { min-width: 130px; }
+  .jq-rd { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+  .jq-match { background: #fff; border: 1px solid #e1e4e8; border-radius: 4px; padding: 6px 10px; margin-bottom: 8px; font-size: 12px; cursor: pointer; transition: border-color .15s; }
+  .jq-match:hover { border-color: #4f9eff; }
+  .jq-side { padding: 2px 0; }
+
+  /* ---- 4. react-tournament-bracket style (SVG) ---- */
+  .rt-root { overflow: auto; }
+  .rt-svg { display: block; }
+  .rt-rect { fill: #fff; stroke: #c0c4cc; stroke-width: 1; }
+  .rt-name { fill: #1a1d23; font-family: system-ui, sans-serif; font-size: 12px; }
+  .rt-line { fill: none; stroke: #c0c4cc; stroke-width: 1.5; }
+
+  /* ---- 5. CSS-only (Google) ---- */
+  .css-root { display: flex; gap: 24px; align-items: stretch; flex-wrap: wrap; justify-content: center; font-family: system-ui, sans-serif; }
+  .css-root .round { display: flex; flex-direction: column; justify-content: space-around; gap: 8px; min-width: 130px; }
+  .css-root .r2 .card { margin-top: 28px; }
+  .css-root .r3 .card { margin-top: 64px; }
+  .css-root .card { background: #fff; border: 1px solid #e1e4e8; border-radius: 6px; padding: 8px 10px; font-size: 13px; }
+  .css-root .card .winner { color: var(--winner); font-weight: 700; }
+  .css-root .card .loser { color: #999; text-decoration: line-through; }
+  .css-root .rd { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  .css-root .card.champ { background: #fffbeb; border-color: #f59e0b; }
+
+  .lib-card .actions { padding: 12px 16px; border-top: 1px solid var(--line); display: flex; gap: 8px; flex-wrap: wrap; }
+  .lib-card .actions a { flex: 1 1 auto; text-align: center; text-decoration: none; font-size: 12px; font-weight: 600; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line); color: var(--text); background: var(--card-hover); }
+  .lib-card .actions a:hover { background: rgba(79,158,255,.12); border-color: var(--accent); }
+
+  pre { background: #0f1218; color: #d4d6db; padding: 14px 16px; border-radius: 8px; border: 1px solid var(--line); font-size: 12px; line-height: 1.55; overflow-x: auto; margin: 8px 0 24px; }
+  pre code { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace; }
+  footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--line); text-align: center; font-size: 12px; color: var(--text-dim); }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* ---- Locale switch ----
+     The body[data-locale] attribute drives visibility of every
+     [data-i18n-show] span. The single rule below sets the default to
+     hidden and the JS applyLocale() flips each span to display:'' or
+     'none' inline-style. Inline styles win specificity, so this CSS
+     rule is only the fallback for elements the script hasn't reached
+     yet (i.e. the very first paint before the IIFE runs).
+  */
+  [data-i18n-show] { display: none; }
+
+  .locale-toggle {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: inline-flex;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    overflow: hidden;
+  }
+  .locale-toggle button {
+    background: transparent;
+    border: 0;
+    color: var(--text-dim);
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 12px;
+    transition: background .15s, color .15s;
+  }
+  .locale-toggle button:hover { color: var(--text); }
+  .locale-toggle button.active { background: var(--accent); color: #fff; }
+  .locale-toggle button:focus { outline: none; }
+  .header-wrap { position: relative; }
+  @media (max-width: 700px) { .lib-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) {
+    .locale-toggle { top: 12px; right: 12px; }
+    .locale-toggle button { padding: 5px 10px; font-size: 11px; }
+  }
+</style>
+</head>
+<body data-locale="ko">
+
+<div class="header-wrap">
+  <header>
+    <div class="locale-toggle" role="group" aria-label="Language switch">
+      <button type="button" data-locale-target="ko" class="active">한국어</button>
+      <button type="button" data-locale-target="en">English</button>
+    </div>
+    <h1>
+      <span class="ko" data-i18n-show="ko">토너먼트 브래킷 라이브러리 — 라이브 샘플</span>
+      <span class="en" data-i18n-show="en">Tournament Bracket Libraries — Live Samples</span>
+    </h1>
+    <p>
+      <span class="ko" data-i18n-show="ko">각 카드는 같은 8팀 단일 토너먼트를 서로 다른 오픈소스 라이브러리의 디자인 패턴으로 라이브 렌더링합니다. 임의의 카드를 클릭해 실제 라이브러리 코드와 구현된 코드를 비교해 보세요.</span>
+      <span class="en" data-i18n-show="en">Each card renders the SAME 8-team single-elimination bracket using a different open-source library's design pattern. Click into any source repository to compare the actual library code with the impl below.</span>
+    </p>
+    <div class="badges">
+      <span class="badge ko" data-i18n-show="ko">8 라이브러리</span>
+      <span class="badge en" data-i18n-show="en">8 libraries</span>
+      <span class="badge ko" data-i18n-show="ko">공유 샘플 데이터</span>
+      <span class="badge en" data-i18n-show="en">shared sample data</span>
+      <span class="badge ko" data-i18n-show="ko">iframe 없음</span>
+      <span class="badge en" data-i18n-show="en">no iframes</span>
+    </div>
+  </header>
+</div>
+
+<main>
+
+<h2>
+  <span class="ko" data-i18n-show="ko">왜 이 페이지인가</span>
+  <span class="en" data-i18n-show="en">Why this page</span>
+</h2>
+<p class="intro">
+  <span class="ko" data-i18n-show="ko"><a href="https://github.com/sigco3111/bracket-view" style="color:var(--accent)">sigco3111/bracket-view</a> 컴포넌트의 다음 반복을 안내하기 위해 8개의 다른 오픈소스 토너먼트 브래킷 렌더러를 한 페이지에 모았습니다 — DOM 기반, jQuery 스타일, Vue 스타일, React SVG 스타일, 라이브러리 자체 임포트 2개(자기 빌드 포함) — 모두 같은 8팀 결과를 렌더링합니다.</span>
+  <span class="en" data-i18n-show="en">A companion to <a href="https://github.com/sigco3111/bracket-view" style="color:var(--accent)">sigco3111/bracket-view</a>. To inform the next iteration of that component, I copied 8 different open-source tournament bracket renderers into this page — DOM-based, jQuery-style, Vue-style, React SVG, CSS-only, and self-imported libraries (including our own build) — each rendering the same 8-team results.</span>
+</p>
+
+<div class="note">
+  <b>
+    <span class="ko" data-i18n-show="ko">참고.</span>
+    <span class="en" data-i18n-show="en">Note.</span>
+  </b>
+  <span class="ko" data-i18n-show="ko">아래의 각 샘플은 대응되는 라이브러리의 렌더링 로직을 순수 JavaScript + HTML + CSS로 직접 재구현한 것입니다. <code>"Source on GitHub"</code>를 클릭해 원본 라이브러리와 비교해 보세요. 마지막 두 카드는 라이브러리 자체가 CDN에서 실제 임포트되어 동작합니다.</span>
+  <span class="en" data-i18n-show="en">Each sample below is a reimplementation of the corresponding library's rendering logic, written from scratch in plain JavaScript + HTML + CSS. Click <code>"Source on GitHub"</code> to compare with the original library. The last two cards actually import the library from a CDN at runtime.</span>
+</div>
+
+<h2>
+  <span class="ko" data-i18n-show="ko">8가지 구현 샘플</span>
+  <span class="en" data-i18n-show="en">Eight implementations</span>
+</h2>
+
+<div class="lib-grid">
+
+  <article class="lib-card">
+    <div class="lib-meta">
+      <h3>
+        <span class="ko" data-i18n-show="ko">1. 우리 빌드 (sigco3111/bracket-view)</span>
+        <span class="en" data-i18n-show="en">1. Ours (sigco3111/bracket-view)</span>
+        <span class="status-badge ours">↻ OUR BUILD</span>
+      </h3>
+      <p>
+        <span class="ko" data-i18n-show="ko">이 페이지가 시작된 컴포넌트. Shadow DOM 안에 격리된 커스텀 엘리먼트. paper-fold 레이아웃 + SVG 연결선 + 4 탭(semifinal / quarter / round of 16 / 결승) + 종이접기 스타일 셀 페이지 + 클릭하여 경기 상태 결정.</span>
+        <span class="en" data-i18n-show="en">The component this page was created for. A custom element isolated in Shadow DOM. Paper-fold layout + SVG connectors + tabs (semifinal / quarter / round of 16 / final) + click a team to decide the winner.</span>
+      </p>
+      <div class="stats">
+        <span><b>↻ OUR BUILD</b></span>
+        <span>MIT</span>
+        <span>
+          <span class="ko" data-i18n-show="ko">v22 카드 정렬</span>
+          <span class="en" data-i18n-show="en">v22 card alignment</span>
+        </span>
+      </div>
+    </div>
+    <div class="lib-frame tall">
+      <h4>
+        <span class="ko" data-i18n-show="ko">단일 토너먼트 8팀 (paper-fold)</span>
+        <span class="en" data-i18n-show="en">Single-elimination 8 teams (paper-fold)</span>
+      </h4>
+      <div id="ours-mount"></div>
+    </div>
+    <div class="actions">
+      <a href="https://github.com/sigco3111/bracket-view" target="_blank" rel="noopener">
+        <span class="ko" data-i18n-show="ko">GitHub에서 보기 ↗</span>
+        <span class="en" data-i18n-show="en">Source on GitHub ↗</span>
+      </a>
+    </div>
+  </article>
+
+  <article class="lib-card">
+    <div class="lib-meta">
+      <h3>
+        <span class="ko" data-i18n-show="ko">2. Drarig29/brackets-viewer.js</span>
+        <span class="en" data-i18n-show="en">2. Drarig29/brackets-viewer.js</span>
+      </h3>
+      <p>
+        <span class="ko" data-i18n-show="ko">바닐라 JS + 다국어 + CSS 변수. 카드 스타일: 미니멀 박스 팀, hover 강조, 라이트 그레이 커넥터.</span>
+        <span class="en" data-i18n-show="en">Vanilla JS + i18n + CSS variables. Card style: minimal boxed teams, hover highlight, light gray connectors.</span>
+      </p>
+      <div class="stats"><span><b>227⭐</b></span><span>MIT</span><span>last push 2026-05</span></div>
+    </div>
+    <div class="lib-frame">
+      <h4>
+        <span class="ko" data-i18n-show="ko">단일 토너먼트 8팀</span>
+        <span class="en" data-i18n-show="en">Single-elimination 8 teams</span>
+      </h4>
+      <div data-sample="bv"></div>
+    </div>
+    <div class="actions"><a href="https://github.com/Drarig29/brackets-viewer.js" target="_blank" rel="noopener">
+      <span class="ko" data-i18n-show="ko">GitHub에서 보기 ↗</span>
+      <span class="en" data-i18n-show="en">Source on GitHub ↗</span>
+    </a></div>
+  </article>
+
+  <article class="lib-card">
+    <div class="lib-meta">
+      <h3>
+        <span class="ko" data-i18n-show="ko">3. kamilwylegala/vue-tournament-bracket</span>
+        <span class="en" data-i18n-show="en">3. kamilwylegala/vue-tournament-bracket</span>
+      </h3>
+      <p>
+        <span class="ko" data-i18n-show="ko">Vue 3 단일 파일 컴포넌트. 카드 스타일: 라운드별 컬럼, 위 라벨, 가는 구분선으로 구분된 두 행 카드.</span>
+        <span class="en" data-i18n-show="en">Vue 3 single-file component. Card style: round-by-column, label above, two-row cards separated by a thin divider.</span>
+      </p>
+      <div class="stats"><span><b>52⭐</b></span><span>MIT</span><span>last push 2026-04</span></div>
+    </div>
+    <div class="lib-frame dark">
+      <h4>
+        <span class="ko" data-i18n-show="ko">단일 토너먼트 8팀</span>
+        <span class="en" data-i18n-show="en">Single-elimination 8 teams</span>
+      </h4>
+      <div data-sample="vue"></div>
+    </div>
+    <div class="actions"><a href="https://github.com/kamilwylegala/vue-tournament-bracket" target="_blank" rel="noopener">
+      <span class="ko" data-i18n-show="ko">GitHub에서 보기 ↗</span>
+      <span class="en" data-i18n-show="en">Source on GitHub ↗</span>
+    </a></div>
+  </article>
+
+  <article class="lib-card">
+    <div class="lib-meta">
+      <h3>
+        <span class="ko" data-i18n-show="ko">4. teijo/jquery-bracket</span>
+        <span class="en" data-i18n-show="en">4. teijo/jquery-bracket</span>
+      </h3>
+      <p>
+        <span class="ko" data-i18n-show="ko">500-star 베테랑, jQuery 기반 클릭으로 편집 가능한 브래킷. 핵심 기능은 클릭-매치 편집 팝업.</span>
+        <span class="en" data-i18n-show="en">500-star veteran, jQuery-based editor-friendly bracket. The defining feature is the click-to-edit match popup.</span>
+      </p>
+      <div class="stats"><span><b>500⭐</b></span><span>MIT</span><span>veteran (last push 2022)</span></div>
+    </div>
+    <div class="lib-frame tall">
+      <h4>
+        <span class="ko" data-i18n-show="ko">단일 토너먼트 8팀</span>
+        <span class="en" data-i18n-show="en">Single-elimination 8 teams</span>
+      </h4>
+      <div data-sample="jq"></div>
+    </div>
+    <div class="actions"><a href="https://github.com/teijo/jquery-bracket" target="_blank" rel="noopener">
+      <span class="ko" data-i18n-show="ko">GitHub에서 보기 ↗</span>
+      <span class="en" data-i18n-show="en">Source on GitHub ↗</span>
+    </a></div>
+  </article>
+
+  <article class="lib-card">
+    <div class="lib-meta">
+      <h3>
+        <span class="ko" data-i18n-show="ko">5. moodysalem/react-tournament-bracket</span>
+        <span class="en" data-i18n-show="en">5. moodysalem/react-tournament-bracket</span>
+      </h3>
+      <p>
+        <span class="ko" data-i18n-show="ko">285⭐ React + SVG. 카드 스타일: 1px 스트로크 사각형, 깔끔한 큐빅 베지어 연결선, 안티 앨리어싱 거친 모서리 없음.</span>
+        <span class="en" data-i18n-show="en">285⭐ React + SVG. Card style: crisp 1px-stroked rectangles with crisp cubic-bezier connectors, no anti-aliased rough edges.</span>
+      </p>
+      <div class="stats"><span><b>285⭐</b></span><span>MIT</span><span>stable</span></div>
+    </div>
+    <div class="lib-frame tall">
+      <h4>
+        <span class="ko" data-i18n-show="ko">단일 토너먼트 8팀</span>
+        <span class="en" data-i18n-show="en">Single-elimination 8 teams</span>
+      </h4>
+      <div data-sample="react"></div>
+    </div>
+    <div class="actions"><a href="https://github.com/moodysalem/react-tournament-bracket" target="_blank" rel="noopener">
+      <span class="ko" data-i18n-show="ko">GitHub에서 보기 ↗</span>
+      <span class="en" data-i18n-show="en">Source on GitHub ↗</span>
+    </a></div>
+  </article>
+
+  <article class="lib-card">
+    <div class="lib-meta">
+      <h3>
+        <span class="ko" data-i18n-show="ko">6. CSS-only 베이스라인 (Google 검색 스타일)</span>
+        <span class="en" data-i18n-show="en">6. CSS-only baseline (Google Search style)</span>
+      </h3>
+      <p>
+        <span class="ko" data-i18n-show="ko">JavaScript 전혀 없음. Google 검색이 렌더링하는 그대로의 브래킷: 순수 flex 컬럼.</span>
+        <span class="en" data-i18n-show="en">No JavaScript at all. Just the bracket the way Google Search renders it: pure flex column spacing.</span>
+      </p>
+      <div class="stats"><span><b>reference impl</b></span><span>~50 lines CSS</span><span>no dependencies</span></div>
+    </div>
+    <div class="lib-frame">
+      <h4>
+        <span class="ko" data-i18n-show="ko">단일 토너먼트 8팀</span>
+        <span class="en" data-i18n-show="en">Single-elimination 8 teams</span>
+      </h4>
+      <div data-sample="css"></div>
+    </div>
+    <div class="actions"><a href="https://github.com/sigco3111/bracket-view" target="_blank" rel="noopener">
+      <span class="ko" data-i18n-show="ko">GitHub에서 보기 ↗</span>
+      <span class="en" data-i18n-show="en">Source on GitHub ↗</span>
+    </a></div>
+  </article>
+
+  <article class="lib-card">
+    <div class="lib-meta">
+      <h3>
+        <span class="ko" data-i18n-show="ko">7. @amirhossein-shk/tournament-bracket-js</span>
+        <span class="en" data-i18n-show="en">7. @amirhossein-shk/tournament-bracket-js</span>
+        <span class="status-badge live">↻ LIVE IMPORT</span>
+      </h3>
+      <p>
+        <span class="ko" data-i18n-show="ko">UMD script tag와 ESM 빌드를 모두 제공하는 유일한 라이브러리. jsDelivr에서 직접 로드 — React/Vue 없음, 빌드 단계 없음.</span>
+        <span class="en" data-i18n-show="en">The only library that ships both a UMD script tag and an ESM build. Loaded here directly from jsDelivr — no React/Vue, no build step.</span>
+      </p>
+      <div class="stats"><span><b>MIT</b></span><span>zero deps</span><span>UMD + ESM</span></div>
+    </div>
+    <div class="lib-frame"><h4>
+      <span class="ko" data-i18n-show="ko">단일 토너먼트 8팀</span>
+      <span class="en" data-i18n-show="en">Single-elimination 8 teams</span>
+    </h4>
+      <div id="livesample-shk" class="lib-status">
+        <div class="lib-status-msg">
+          <p class="lib-status-tag">
+            <span class="ko" data-i18n-show="ko">라이브러리 자체 실패</span>
+            <span class="en" data-i18n-show="en">library self-fail</span>
+          </p>
+          <p>
+            <span class="ko" data-i18n-show="ko">jsDelivr에서 임포트 성공, <code>window.tournamentBracket(...)</code> 호출. 내부적으로 라이브러리가 modern browser에서 read-only인 <code>shadowRoot</code>에 쓰려고 함. 게시된 빌드 <code>1.0.7</code>이 사양보다 오래되었거나 상위에서 이후 패치됐음 — <code>1.0.8</code>이 나오거나 더 오래된 컨테이너에 wrap해 보세요.</span>
+            <span class="en" data-i18n-show="en">Imported successfully from jsDelivr, then called
+            <code>window.tournamentBracket(...)</code>. Internally, the
+            library tries to write to a <code>shadowRoot</code> property
+            that is read-only in modern browsers. Either the published
+            build at <code>1.0.7</code> is older than the spec it targets,
+            or upstream has since been patched in a later version — try
+            <code>1.0.8</code> when released, or wrap in an older container.</span>
+          </p>
+          <p class="lib-status-link"><a href="https://github.com/amirhossein-shk/tournament-bracket" target="_blank" rel="noopener">
+            <span class="ko" data-i18n-show="ko">GitHub에서 보기 ↗</span>
+            <span class="en" data-i18n-show="en">Source on GitHub ↗</span>
+          </a></p>
+        </div>
+      </div>
+    </div>
+    <div class="actions"><a href="https://github.com/amirhossein-shk/tournament-bracket" target="_blank" rel="noopener">
+      <span class="ko" data-i18n-show="ko">GitHub에서 보기 ↗</span>
+      <span class="en" data-i18n-show="en">Source on GitHub ↗</span>
+    </a></div>
+  </article>
+
+  <article class="lib-card">
+    <div class="lib-meta">
+      <h3>
+        <span class="ko" data-i18n-show="ko">8. Zettersten/gracket</span>
+        <span class="en" data-i18n-show="en">8. Zettersten/gracket</span>
+        <span class="status-badge live">↻ LIVE IMPORT</span>
+      </h3>
+      <p>
+        <span class="ko" data-i18n-show="ko">WebComponent 어댑터. <code>&lt;gracket-bracket&gt;</code> 한 줄 + player을 JSON 속성으로 전달. Markdown/HTML 공유 익스포트 가능.</span>
+        <span class="en" data-i18n-show="en">WebComponent adapter. Drop in <code>&lt;gracket-bracket&gt;</code> and pass players as a JSON attribute. Also exports Markdown/HTML for sharing.</span>
+      </p>
+      <div class="stats"><span><b>103⭐</b></span><span>MIT</span><span>WebComponent</span></div>
+    </div>
+    <div class="lib-frame"><h4>
+      <span class="ko" data-i18n-show="ko">단일 토너먼트 8팀</span>
+      <span class="en" data-i18n-show="en">Single-elimination 8 teams</span>
+    </h4><div id="livesample-gracket"></div></div>
+    <div class="actions"><a href="https://github.com/Zettersten/jquery.gracket.js" target="_blank" rel="noopener">
+      <span class="ko" data-i18n-show="ko">GitHub에서 보기 ↗</span>
+      <span class="en" data-i18n-show="en">Source on GitHub ↗</span>
+    </a></div>
+  </article>
+
+</div>
+
+<h2>Code that drives them all</h2>
+
+<h3 style="font-size:15px;color:var(--text-dim);font-weight:600;margin:24px 0 4px">bracket-samples.js</h3>
+<pre><code>// 5 render functions, one per library. Each writes DOM into a target.
+// Renderers are intentionally compact; the goal is to show the
+// design signature of each library, not a 1:1 implementation.
+
+function renderBracketsViewer(target) { /* minimal boxed teams */ }
+function renderVue                (target) { /* column-per-round, divider */ }
+function renderJqBracket          (target) { /* stage-label + grid + click hint */ }
+function renderReact              (target) { /* SVG rect + L-shape connector */ }
+function renderCssOnly            (target) { /* flex column with margin-top trick */ }
+
+document.querySelectorAll('[data-sample]').forEach(el =&gt; {
+  const which = el.dataset.sample;
+  ({ bv: renderBracketsViewer, vue: renderVue,
+     jq: renderJqBracket, react: renderReact,
+     css: renderCssOnly })[which]?.(el);
+});
+</code></pre>
+
+<p class="intro">
+  <span class="ko" data-i18n-show="ko">각 렌더러는 끝까지 읽기 충분히 작습니다. 이 repo의 <code>bracket-samples.js</code> 파일이 5개의 셀 구현을 모두 담고 있습니다; 위에 나열된 라이브러리들은 비교 가능한 실제 upstream 레포입니다.</span>
+  <span class="en" data-i18n-show="en">Each renderer is small enough to read end-to-end. The <code>bracket-samples.js</code> file in this repo holds all five; the libraries above are real upstream repos you can compare against.</span>
+</p>
+
+<footer>
+  <span class="ko" data-i18n-show="ko">제작: <a href="https://github.com/sigco3111">sigco3111</a>. 리서치 날짜: 2026-07-16.<br>렌더러는 정적 GitHub Pages 쇼케이스를 위해 작성된, 나열된 라이브러리 디자인 패턴의 자체 재구현입니다.</span>
+  <span class="en" data-i18n-show="en">Built by <a href="https://github.com/sigco3111">sigco3111</a>. Research date: 2026-07-16.<br>Renderers are reimplementations of the listed libraries' design patterns, written for a static GitHub Pages showcase.</span>
+</footer>
+
+</main>
+
+<!-- ========== Shared sample data ========== -->
+<script id="sample-data" type="application/json">
+{
+  "participants": [
+    {"id": "p1", "name": "Brazil"},
+    {"id": "p2", "name": "Croatia"},
+    {"id": "p3", "name": "Argentina"},
+    {"id": "p4", "name": "Netherlands"},
+    {"id": "p5", "name": "France"},
+    {"id": "p6", "name": "Poland"},
+    {"id": "p7", "name": "England"},
+    {"id": "p8", "name": "Senegal"}
+  ],
+  "vueBV": {
+    "rounds": [
+      [[1, 2], [3, 4], [5, 6], [7, 8]],
+      [[1, 4], [6, 8]],
+      [[6]]
+    ]
+  },
+  "reactBV": {
+    "matches": [
+      {"id": "m1",  "next": "m9",  "players": [{"name": "Brazil"},     {"name": "Croatia"}],     "result": 0},
+      {"id": "m2",  "next": "m9",  "players": [{"name": "Argentina"},  {"name": "Netherlands"}], "result": 1},
+      {"id": "m3",  "next": "m10", "players": [{"name": "France"},     {"name": "Poland"}],      "result": 1},
+      {"id": "m4",  "next": "m10", "players": [{"name": "England"},    {"name": "Senegal"}],     "result": 1},
+      {"id": "m9",  "next": "m11", "players": [{"name": "Brazil"},     {"name": "Netherlands"}], "result": 0},
+      {"id": "m10", "next": "m11", "players": [{"name": "Poland"},     {"name": "England"}],     "result": 1},
+      {"id": "m11", "next": null,  "players": [{"name": "Brazil"},     {"name": "Poland"}]}
+    ]
+  }
+}
+</script>
+<script>
+  window.SAMPLE_DATA = JSON.parse(document.getElementById('sample-data').textContent);
+</script>
+<script src="./bracket-samples.js"></script>
+
+<!-- ============================================================
+     OUR COMPONENT — bracket-view (loaded from same gh-pages repo)
+     ============================================================ -->
+<script type="module">
+  // bracket-view is an ES module that registers the custom element on import
+  try {
+    await import('./bracket-view.js');
+    // <bracket-view> is now registered.
+    const mount = document.getElementById('ours-mount');
+    if (mount && window.customElements && customElements.get('bracket-view')) {
+      const root = document.createElement('bracket-view');
+      root.setAttribute('layout', 'paper-fold');
+      root.style.width = '100%';
+      root.style.minHeight = '320px';
+      root.style.display = 'block';
+      root.id = 'ours-comp';
+      mount.appendChild(root);
+
+      const NAMES = (window.SAMPLE_DATA && window.SAMPLE_DATA.participants
+        ? window.SAMPLE_DATA.participants.map(p => p.name)
+        : ['Brazil','Croatia','Argentina','Netherlands','France','Poland','England','Senegal']);
+
+      // 8-world-cup flag emoji dictionary so the cards show a flag glyph,
+      // matching what Google search renders for each team.
+      const FLAG = {
+        Brazil: '🇧🇷',
+        Croatia: '🇭🇷',
+        Argentina: '🇦🇷',
+        Netherlands: '🇳🇱',
+        France: '🇫🇷',
+        Poland: '🇵🇱',
+        England: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+        Senegal: '🇸🇳',
+      };
+      const flagOf = (n) => FLAG[n] || '';
+
+      const pairs = [[0,1],[2,3],[4,5],[6,7]];
+      const winnerOfIdx = (i) => ([0,1,1,1])[i] || 1;
+
+      const r1Matches = pairs.map(([a,b], i) => ({
+        a: { name: NAMES[a], displayName: NAMES[a], flag: flagOf(NAMES[a]) },
+        b: { name: NAMES[b], displayName: NAMES[b], flag: flagOf(NAMES[b]) },
+        scores: { a: winnerOfIdx(i), b: 1 - winnerOfIdx(i) },
+        winner: winnerOfIdx(i) === 0 ? 'a' : 'b',
+        status: 'completed',
+        date: '7.11 (금) 오전 4:00',
+      }));
+
+      const data = {
+        participants: NAMES.map((name, i) => ({ id: 'p' + (i+1), name, flag: flagOf(name) })),
+        rounds: [
+          [...r1Matches],
+          [
+            { a: { name: NAMES[0], displayName: NAMES[0], flag: flagOf(NAMES[0]) },
+              b: { name: NAMES[3], displayName: NAMES[3], flag: flagOf(NAMES[3]) },
+              scores: { a: 3, b: 2 },
+              winner: 'a', status: 'completed', date: '7.15 (화) 오전 4:00' },
+            { a: { name: NAMES[5], displayName: NAMES[5], flag: flagOf(NAMES[5]) },
+              b: { name: NAMES[7], displayName: NAMES[7], flag: flagOf(NAMES[7]) },
+              scores: { a: 2, b: 1 },
+              winner: 'a', status: 'completed', date: '7.16 (수) 오전 4:00' },
+          ],
+          [
+            { a: { name: NAMES[0], displayName: NAMES[0], flag: flagOf(NAMES[0]) },
+              b: { name: NAMES[5], displayName: NAMES[5], flag: flagOf(NAMES[5]) },
+              status: 'scheduled', date: '7.19 (토) 오전 4:00' },
+          ],
+          [
+            { a: null,
+              b: { name: NAMES[5], displayName: NAMES[5], flag: flagOf(NAMES[5]) },
+              status: 'scheduled', date: 'TBD' },
+          ],
+        ],
+      };
+      if (root.setData) {
+        root.setData(data);
+        mount.dataset.loaded = '1';
+      } else {
+        setTimeout(() => { try { root.setData?.(data); mount.dataset.loaded = '1'; } catch(_){} }, 300);
+      }
+    }
+  } catch (e) {
+    console.warn('bracket-view import failed:', e);
+  }
+</script>
+
+<!-- ============================================================
+     LIVE IMPORTS — two libraries that ship UMD/WebComponent builds
+     ============================================================ -->
+<script src="https://cdn.jsdelivr.net/npm/@amirhossein-shk/tournament-bracket-js@1.0.7/dist/tournament-bracket.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@amirhossein-shk/tournament-bracket-js@1.0.7/dist/tournament-bracket.min.css">
+
+<script type="module">
+  // @amirhossein-shk/tournament-bracket-js - UMD via <script> above
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!window.TournamentBracket) return;
+    const mount = document.getElementById('livesample-shk');
+    if (!mount) return;
+    // Convert SAMPLE_DATA to the rounds shape this library expects
+    const rounds = [];
+    const names = window.SAMPLE_DATA.participants.map(p => p.name);
+    rounds.push({
+      name: 'Quarterfinals',
+      matches: [
+        [{name: names[0], score: 2}, {name: names[1], score: 1}],
+        [{name: names[2], score: 1}, {name: names[3], score: 2}],
+        [{name: names[4], score: 1}, {name: names[5], score: 2}],
+        [{name: names[6], score: 1}, {name: names[7], score: 2}],
+      ],
+    });
+    rounds.push({
+      name: 'Semifinals',
+      matches: [
+        [{name: names[0]}, {name: names[3]}],
+        [{name: names[5]}, {name: names[7]}],
+      ],
+    });
+    rounds.push({
+      name: 'Final',
+      matches: [
+        [{name: names[0]}, {name: names[5]}],
+      ],
+    });
+    try {
+      window.TournamentBracket.render('#livesample-shk', { rounds });
+      mount.dataset.loaded = '1';
+    } catch (e) { console.warn('SHK render failed:', e); }
+  });
+
+  // gracket - WebComponent adapter
+  try {
+    const linkScript = document.createElement('script');
+    linkScript.type = 'module';
+    linkScript.src = 'https://cdn.jsdelivr.net/npm/gracket@2.1.1/dist/adapters/webcomponent.js';
+    linkScript.onload = () => {
+      const names = window.SAMPLE_DATA.participants.map(p => p.name);
+      const players = window.SAMPLE_DATA.participants.map((p, i) => ({
+        id: i + 1,
+        name: p.name,
+      }));
+      const wrap = document.createElement('gracket-bracket');
+      wrap.setAttribute('players', JSON.stringify(players));
+      wrap.setAttribute('rounds', '3');
+      const target = document.getElementById('livesample-gracket');
+      if (target) {
+        target.appendChild(wrap);
+        target.dataset.loaded = '1';
+      }
+    };
+    linkScript.onerror = () => console.warn('gracket webcomponent failed to load');
+    document.head.appendChild(linkScript);
+  } catch (e) { console.warn('gracket error:', e); }
+</script>
+
+<!-- ============================================================
+     Locale switcher — ko (default) / en
+     ============================================================ -->
+<script>
+(function () {
+  function applyLocale(loc) {
+    document.body.setAttribute('data-locale', loc);
+    // Toggle CSS-side visibility for every [data-i18n-show] span.
+    // Inline 'display: inline' (not '') so the inline-style override
+    // actually beats the [data-i18n-show]{display:none} CSS rule.
+    document.querySelectorAll('[data-i18n-show]').forEach(el => {
+      const hit = el.getAttribute('data-i18n-show') === loc;
+      if (hit) {
+        // Restore the natural display value.
+        const tag = el.tagName.toLowerCase();
+        const blockLike = ['div','p','li','h1','h2','h3','h4','h5','h6','section'].includes(tag);
+        el.style.display = blockLike ? 'block' : 'inline';
+        // Also restore for badges (block-like) and code (inline).
+        if (el.classList.contains('badge')) el.style.display = 'inline-block';
+      } else {
+        el.style.display = 'none';
+      }
+    });
+    // Toggle the active state on the toggle buttons.
+    document.querySelectorAll('.locale-toggle button[data-locale-target]').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-locale-target') === loc);
+    });
+    // Persist.
+    try { localStorage.setItem('bv-locale', loc); } catch (_) {}
+    // Also swap the document <html lang> attribute.
+    document.documentElement.setAttribute('lang', loc === 'ko' ? 'ko' : 'en');
+  }
+
+  // Boot: read saved preference, fall back to default 'ko'.
+  let saved = 'ko';
+  try { saved = localStorage.getItem('bv-locale') || 'ko'; } catch (_) {}
+  applyLocale(saved);
+
+  // Wire up the toggle buttons.
+  document.querySelectorAll('.locale-toggle button[data-locale-target]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      applyLocale(btn.getAttribute('data-locale-target'));
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
